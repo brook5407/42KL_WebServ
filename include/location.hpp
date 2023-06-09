@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   location.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: chchin <chchin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: brook <brook@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 10:04:51 by chchin            #+#    #+#             */
-/*   Updated: 2023/05/24 15:19:34 by chchin           ###   ########.fr       */
+/*   Updated: 2023/06/09 01:43:05 by brook            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,6 @@
 class Location {
 	public:
 		Location();
-		Location(Location const &rhs);
 		~Location();
 
 	private:
@@ -38,12 +37,11 @@ class Location {
 
 		std::string &getPrefix() const;
 		std::string &getRoot() const;
+		std::set<std::string> &getMethods() const;
 		std::string &getIndexPage() const;
-		
-		std::pair<int, std::string> getRedirection() const;
-		bool		checkAutoIndex() const;
+		bool checkAutoIndex() const;
+		std::pair<int, std::string> &getRedirection() const;
+		bool checkRedirection() const;
+};
 
-
-
-
-}
+#endif
