@@ -1,0 +1,4 @@
+wwwroot/
+*.d
+*.o
+*.exe
