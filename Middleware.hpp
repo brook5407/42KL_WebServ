@@ -3,8 +3,8 @@
 class Middleware
 {
     public:
-        virtual void execute(Request, Response) = 0;
-        //{ std::cout <<"virtual" <<std::endl; };//
+        virtual void execute(Request &, Response &) = 0;
+
     private:
         std::map<std::string, std::string> _config;
 };
@@ -12,47 +12,64 @@ class Middleware
 class IndexFile : public Middleware
 {
     public:
-        void execute(Request req, Response )
+        void execute(Request &, Response &)
         {
-            req._uri = "/index.html";
+        }
+};
+
+class Redirect: public Middleware
+{
+    public:
+        void execute(Request &, Response &res)
+        {
+            res.status(301);
+            res.header("Location", "http://www.google.com");
+            res.end();
         }
 };
 
 class StaticFile: public Middleware
 {
     public:
-        void execute(Request req, Response res)
+        // todo add header last-modified
+        void execute(Request &req, Response &res)
         {
-            //root directive
-            std::cout << "static file " << req._uri << std::endl;
-            int fd = open(("." + req._uri).c_str(), O_RDONLY);
-            char buffer[1024];
-            int length;
-            int total = 0;
+            // avoid "GET / HTTP/1.1" infinity loop
+            struct stat sb;
+            if (!(stat(("./wwwroot/" + req._uri).c_str(), &sb) == 0 && S_ISREG(sb.st_mode)))
+                return;
 
-            // std::fstream file("." + req._uri, std::ios::in | std::ios::binary);
-            // //read file stream to string
-            // std::string 
+            // int fd = open(("./wwwroot/" + req._uri).c_str(), O_RDONLY);
+            // if (fd == -1 || read(fd, 0, 0) == -1)
+            //     return;
+            // close(fd);
 
-            std::string contents;
-            while ((length = read(fd, buffer, sizeof(buffer))) > 0)
-            {
-                total += length;
-                contents += std::string(buffer, length);
-            }
-            res.write(
-                std::string("HTTP/1.1 200 OK") 
-        + 
-            "\r\n\r\n" + contents);
+            res.write_from_file("./wwwroot/" + req._uri);
+            res.end();
         }
 };
 
-class NotFound: public Middleware
+class ErrorPage: public Middleware
 {
     public:
-        void execute(Request, Response res)
+        void execute(Request &, Response &res)
         {
-
-            res.write("HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n");
+            if (res.status() == 200)
+                res.status(404);
+            std::stringstream ss;
+            ss <<  "./error_pages/" << res.status() << ".html";
+            std::cout << "error page: " << ss.str() << std::endl;
+            res.write_from_file(ss.str());
+            res.end();
         }
+};
+
+template <typename T>
+struct Singleton
+{
+    static T *get_instance()
+    {
+        static T instance;
+        return &instance;
+    }
 };

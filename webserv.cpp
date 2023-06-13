@@ -29,18 +29,14 @@ void execute_request(Connection &connection)
 {
     (void)  connection;
     Request request(connection._in_buffer);
-    std::cout << "building response..." << std::endl;
     Response response(connection);
-    std::cout << "done building response..." << std::endl;
 
     std::vector<Middleware *> middlewares;
-    StaticFile static_file;
-    NotFound not_found;
     // middlewares.push_back(IndexFile());
-    middlewares.push_back(&static_file);
-    // middlewares.push_back(&not_found);
+    middlewares.push_back(Singleton<StaticFile>::get_instance());
+    middlewares.push_back(Singleton<ErrorPage>::get_instance());
 
-    for (size_t i = 0; i < middlewares.size(); ++i)
+    for (size_t i = 0; !response.is_ended() && i < middlewares.size(); ++i)
     {
         std::cout << "executing middleware " << i << std::endl;
         middlewares[i]->execute(request, response);
@@ -78,6 +74,7 @@ int accept_with_select(int listen_socket)
     // process connections
     for (t_connections_it it = connections.begin(); it != connections.end(); ++it)
     {
+        std::cout << "request: " << it->second.status() << ", " << it->second._in_buffer.substr(0,14) << std::endl;
         int fd = it->second.fd();
         if (fd > max_fd)
             max_fd = fd;
@@ -95,6 +92,9 @@ int accept_with_select(int listen_socket)
     std::cout << "connections " << connections.size() << std::endl;
 
     // wait for events
+    // fd/socket, 4,5,6, fd,  for(i =0; i < max;i++)
+    // 1024 bits/flags 000000000111000_, 1 fd is avaialble
+    //=  select ( 6+1, [4, 6], [5]) => 2, [4], [5]
     int number_of_fd = select( max_fd + 1 , &readfds , &writefds , &exceptfds, NULL); // &timeout);
     if (number_of_fd < 0)
         throw std::runtime_error(strerror(errno));
@@ -131,9 +131,20 @@ int accept_with_select(int listen_socket)
         else if (FD_ISSET(fd, &writefds))
         {
             --number_of_fd;
-            it->second.transmit();
-            if (it->second.status() == SENT || it->second.status() == ERROR)
+            try
             {
+                it->second.transmit();
+                if (it->second.status() == SENT || it->second.status() == ERROR)
+                {
+                    close(fd);
+                    to_remove.push_back(fd);
+                }
+            }
+            catch (std::exception &e)
+            {
+                //eg  Connection reset by peer, Broken pipe
+                std::cout << "send exception & remove: " << e.what() << std::endl;
+                // it->second.error();
                 close(fd);
                 to_remove.push_back(fd);
             }
@@ -179,14 +190,15 @@ void server(int port = 8888, int back_log = 3)
 
 int main(int argc, char **argv, char **)
 {
-    try
-    {
+signal(SIGPIPE, SIG_IGN);
         if (argc != 2)
             throw std::runtime_error("usage: webserv <port>");
         int port = atoi(argv[1]);
         std::cout << "webserv @ " << port << std::endl;
         server(port);
         return EXIT_SUCCESS;
+    try
+    {
     }
     catch (const std::exception &e)
     {
