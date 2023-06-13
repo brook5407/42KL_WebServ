@@ -14,6 +14,7 @@
 #include <string>
 #include <sstream>
 #include <stdexcept>
+#include <algorithm>
 
 #include "Connection.hpp"
 #include "Request.hpp"
@@ -25,16 +26,65 @@ typedef std::map<int, Connection> t_connections;
 typedef t_connections::iterator t_connections_it;
 t_connections connections;
 
+typedef std::map<std::string, std::string> t_config;
+typedef std::map<std::string, t_config > t_configs;
+typedef t_configs::iterator t_configs_it;
+
+t_config route_proof_of_concept(Request &request)
+{
+    //route keys by (hostname, port, uri), uri truncated trailing slash
+    t_configs routes;
+    // fake dummy routes
+    routes["localhost:8080"] = t_config(); // {root: "./wwwroot", index: "index.html", cgi: false};
+    routes["localhost:8080/dir"] = t_config(); // {root: "./wwwroot", index: "index.html", cgi: false};
+    routes["localhost:8080/production"] = t_config(); // {root: "./wwwroot", index: "index.html", cgi: false};
+    routes["localhost:8080/production/fake.html"] = t_config(); // {root: "./wwwroot", index: "index.html", cgi: false};
+
+    std::string route = std::string("localhost") + ":8080" + request._uri; // localhost:8080/dir/index.html
+
+    //expects:
+    //uri localhost:8080/purple.png =>  / route
+    //uri localhost:8080/production or localhost:8080/production/ => /production route
+    while (1)
+    {
+        t_configs_it it = routes.lower_bound(route);
+        if (it != routes.end() && it->first == route)
+        {
+            std::cout << "==============================route: " << it->first << "|" << request._uri <<  std::endl;
+            return it->second;
+        }
+        else if (it != routes.begin())
+        {
+            // std::cout << "------------------------------route: " << (--it)->first << std::endl;
+            std::size_t pos = route.find_last_of('/');
+            if (pos == std::string::npos)
+                throw std::runtime_error("no route found");
+            route = route.substr(0, pos);
+            // std::cout << "truncated route to: " << route << std::endl;
+        }
+        else
+        {
+            throw std::runtime_error("no route found");
+        }
+    }
+}
+
 void execute_request(Connection &connection)
 {
     (void)  connection;
     Request request(connection._in_buffer);
     Response response(connection);
 
+    route_proof_of_concept(request);
+
     std::vector<Middleware *> middlewares;
-    // middlewares.push_back(IndexFile());
-    middlewares.push_back(Singleton<StaticFile>::get_instance());
-    middlewares.push_back(Singleton<ErrorPage>::get_instance());
+    //pipeline
+    // middlewares.push_back(Singleton<indexfile>::get_instance());
+    // middlewares.push_back(Singleton<upload>::get_instance()); // /upload
+    middlewares.push_back(Singleton<DirectoryListing>::get_instance()); // when 404
+    // middlewares.push_back(Singleton<cgi>::get_instance()); // login.py
+    middlewares.push_back(Singleton<StaticFile>::get_instance()); // /home.htm
+    middlewares.push_back(Singleton<ErrorPage>::get_instance()); //default action 404
 
     for (size_t i = 0; !response.is_ended() && i < middlewares.size(); ++i)
     {
@@ -55,10 +105,13 @@ void execute_request(Connection &connection)
 // routes [default|80|/dir1/dir2]
 // routes [server2:88][/]
 
-
+//server -> listen-socket ->bind -> accept(listen_socket) return data-socket
+//client -> data-socket (read URI, write HTML/video/picture)
+// many client data-socket duration ms - > hr,  thread -> data-socket, socket -> file description (fd) (read/write/close() )
+// fd polling -> select (10 data-socket) -> 8 available read/write(fd)
 int accept_with_select(int listen_socket)
 {
-    fd_set readfds, writefds, exceptfds;
+    fd_set readfds, writefds, exceptfds; //fd 0-1023 1024
     // struct timeval timeout = {0, 0};
     int max_fd = listen_socket;
     struct sockaddr_in address;
@@ -69,9 +122,9 @@ int accept_with_select(int listen_socket)
     FD_ZERO(&writefds);
     FD_ZERO(&exceptfds);
 
-    FD_SET(listen_socket, &readfds);
+    FD_SET(listen_socket, &readfds); // multi site => multi port
 
-    // process connections
+    // process connections std::map<fd, client-connection>
     for (t_connections_it it = connections.begin(); it != connections.end(); ++it)
     {
         std::cout << "request: " << it->second.status() << ", " << it->second._in_buffer.substr(0,14) << std::endl;

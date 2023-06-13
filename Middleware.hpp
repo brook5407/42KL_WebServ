@@ -1,5 +1,7 @@
 #include <string>
+#include <dirent.h>
 
+//abstract class
 class Middleware
 {
     public:
@@ -14,6 +16,44 @@ class IndexFile : public Middleware
     public:
         void execute(Request &, Response &)
         {
+        }
+};
+
+class DirectoryListing: public Middleware
+{
+    public:
+        void execute(Request &req, Response &res)
+        {
+            // stringstream
+            // http://server/dir/
+            //config["root"] + uri
+            if (req._uri[req._uri.size() - 1] != '/')
+                return;
+
+             DIR *dir;
+            struct dirent *entry;
+
+            // Open directory
+            dir = opendir("./wwwroot/");
+            if (dir == NULL) {
+                perror("opendir");
+                return;
+            }
+
+            res.write("<html><body>");
+            res.write("<h1>Directory listing</h1>");
+            res.write("<ol>");
+
+            // Read directory entries
+            while ((entry = readdir(dir)) != NULL)
+            {
+                res.write(std::string("<li><a href=\"/") + entry->d_name + "\">" + entry->d_name + "</a></li>");
+            }
+            closedir(dir);
+
+            res.write("</ol>");
+            res.write("</html></body>");
+            res.end();
         }
 };
 
@@ -44,6 +84,7 @@ class StaticFile: public Middleware
             //     return;
             // close(fd);
 
+            // res.header("Content-Type", "text/html"); //todo by file extension
             res.write_from_file("./wwwroot/" + req._uri);
             res.end();
         }
