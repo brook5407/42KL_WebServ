@@ -32,7 +32,7 @@ class Response
             {
                 ss << "Content-Length: " << _content.size() << "\r\n";
                 ss << "Content-Type: text/html\r\n";
-                ss << "Connection: close\r\n";
+                // ss << "Connection: close\r\n";
                 ss << "\r\n";
                 ss << _content;
             }
@@ -49,7 +49,7 @@ class Response
                 _connection._ifile.seekg(0, std::ios::beg);
                 // ss << "Content-Type: image/jpeg\r\n";
                 ss << "Content-Length: " << length << "\r\n";
-                ss << "Connection: close\r\n";
+                // ss << "Connection: close\r\n";
                 ss << "\r\n";
                 // ss << _connection._ifile.rdbuf();
             }

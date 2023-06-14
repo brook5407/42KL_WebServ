@@ -2,7 +2,7 @@
 #include <dirent.h>
 
 //abstract class
-class Middleware
+class AMiddleware
 {
     public:
         virtual void execute(Request &, Response &) = 0;
@@ -11,7 +11,7 @@ class Middleware
         std::map<std::string, std::string> _config;
 };
 
-class IndexFile : public Middleware
+class IndexFile : public AMiddleware
 {
     public:
         void execute(Request &, Response &)
@@ -19,7 +19,7 @@ class IndexFile : public Middleware
         }
 };
 
-class DirectoryListing: public Middleware
+class DirectoryListing: public AMiddleware
 {
     public:
         void execute(Request &req, Response &res)
@@ -30,7 +30,7 @@ class DirectoryListing: public Middleware
             if (req._uri[req._uri.size() - 1] != '/')
                 return;
 
-             DIR *dir;
+            DIR *dir;
             struct dirent *entry;
 
             // Open directory
@@ -57,7 +57,7 @@ class DirectoryListing: public Middleware
         }
 };
 
-class Redirect: public Middleware
+class Redirect: public AMiddleware
 {
     public:
         void execute(Request &, Response &res)
@@ -68,7 +68,7 @@ class Redirect: public Middleware
         }
 };
 
-class StaticFile: public Middleware
+class StaticFile: public AMiddleware
 {
     public:
         // todo add header last-modified
@@ -90,16 +90,16 @@ class StaticFile: public Middleware
         }
 };
 
-class ErrorPage: public Middleware
+class ErrorPage: public AMiddleware
 {
     public:
-        void execute(Request &, Response &res)
+        void execute(Request &req, Response &res)
         {
             if (res.status() == 200)
                 res.status(404);
             std::stringstream ss;
             ss <<  "./error_pages/" << res.status() << ".html";
-            std::cout << "error page: " << ss.str() << std::endl;
+            std::cout << "error page: " << ss.str() << " for " << req._uri << std::endl;
             res.write_from_file(ss.str());
             res.end();
         }
@@ -114,3 +114,11 @@ struct Singleton
         return &instance;
     }
 };
+
+template <typename T>
+std::string to_string(T value)
+{
+    std::ostringstream os;
+    os << value;
+    return os.str();
+}
