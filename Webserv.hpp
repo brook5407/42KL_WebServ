@@ -1,6 +1,8 @@
 #include <stack>
 
-class Webserv
+// todo tele netstat established and connections count
+// todo check netstat browser TIME_WAIT
+class Webserver
 {
 
 private:
@@ -9,10 +11,7 @@ typedef std::map<int, Connection> t_connections;
 typedef t_connections::iterator t_connections_it;
 t_connections connections;
 
-typedef std::map<std::string, std::string> t_config;
-typedef std::map<std::string, t_config > t_configs;
-typedef t_configs::iterator t_configs_it;
-t_configs _routes;
+Configuration _configuration;
 
 std::vector<AMiddleware *> _middlewares;
 
@@ -21,23 +20,16 @@ typedef t_ports::iterator t_ports_it;
 t_ports _listen_ports;
 
 public:
+    Webserver(const std::string &config_path): _configuration(config_path)
+    {
+        setup_middleware_pipeline();
+    }
 
-void init()
+void setup_middleware_pipeline()
 {
-    //route keys by (hostname, port, uri), uri truncated trailing slash
-    _routes["default"] = t_config();
-    _routes["localhost:9999"] = t_config(); // {root: "./wwwroot", index: "index.html", cgi: false};
-    _routes["127.0.0.1:8888"] = t_config(); // {root: "./wwwroot", index: "index.html", cgi: false};
-    _routes["localhost:8888"] = t_config(); // {root: "./wwwroot", index: "index.html", cgi: false};
-    _routes["localhost:8888/production"] = t_config(); // {root: "./wwwroot", index: "index.html", cgi: false};
-    _routes["localhost:8888/virtual"] = t_config(); // {root: "./wwwroot", index: "index.html", cgi: false};
-
-    _routes["127.0.0.1:8888"]["root"] = "./wwwroot";
-    _routes["localhost:8888"]["root"] = "./wwwroot/l8";
-    _routes["localhost:9999"]["root"] = "./wwwroot/l9";
-
+ 
     //pipeline
-    // _middlewares.push_back(Singleton<MethodFilter>::get_instance());
+    _middlewares.push_back(Singleton<CheckMethod>::get_instance());
     // _middlewares.push_back(Singleton<indexfile>::get_instance());
     // _middlewares.push_back(Singleton<Session>::get_instance()); // bonus
     // _middlewares.push_back(Singleton<Upload>::get_instance()); // /upload
@@ -47,32 +39,12 @@ void init()
     _middlewares.push_back(Singleton<ErrorPage>::get_instance()); //default action 404
 }
 
-t_config *get_config_by_route(Request &request)
-{
-    std::string route = request._headers["Hostname"] + ":" + request._headers["PORT"] + request._uri; // localhost:8080/dir/index.html
-
-    //expects:
-    //uri localhost:8080/purple.png =>  / route
-    //uri localhost:8080/production or localhost:8080/production/ => /production route
-    while (!_routes.empty() && _routes.count(route) == 0)
-    {
-        std::size_t pos = route.find_last_of('/');
-        if (pos == std::string::npos)
-            break;
-        route = route.substr(0, pos);
-    }
-    if (_routes.count(route) == 0)
-        route = "default";
-    std::cout << "config route " << route << " for " << request._uri << std::endl;
-    return &_routes[route];
-}
-
 void execute_request(Connection &connection)
 {
     Request request(connection._in_buffer);
-    request._headers["PORT"] = to_string(connection._server_port); // todo refactor
-    request._config = get_config_by_route(request);
-    Response response(connection);
+    Response response(connection, _configuration);
+
+    request.translate_path(_configuration._routes);
    
     for (size_t i = 0; !response.is_ended() && i < _middlewares.size(); ++i)
         _middlewares[i]->execute(request, response);
@@ -80,17 +52,15 @@ void execute_request(Connection &connection)
     connection._in_buffer.clear();
 }
 
-// todo
-// multiple listening sockets
-
 int accept_with_select(void)
 {
     fd_set readfds, writefds, exceptfds; //fd 0-1023 1024
-    // struct timeval timeout = {0, 0};
+    struct timeval timeout = {5,0};
     int max_fd, number_of_fd, fd;
     struct sockaddr_in address;
     int length;
     std::stack<int> to_remove;
+    int keep_alive_count;
 
     while (1)
     {
@@ -104,26 +74,55 @@ int accept_with_select(void)
             max_fd = std::max(max_fd, it->second);
         }
 
+        keep_alive_count = 0;
         for (t_connections_it it = connections.begin(); it != connections.end(); ++it)
         {
-            std::cout << "request: " << it->second.status() << ", " << it->second._in_buffer.substr(0,14) << std::endl;
             fd = it->second.fd();
             if (fd > max_fd)
                 max_fd = fd;
             if (it->second.status() == READING)
+            {
                 FD_SET(fd, &readfds);
+                keep_alive_count += it->second._in_buffer.empty();
+            }
             else  if (it->second.status() == SENDING)
                 FD_SET(fd, &writefds);
-            // else
-            //     std::cout << "remove done connection" << std::endl;
-            // FD_SET(fd, &exceptfds);
+            FD_SET(fd, &exceptfds);
         }
 
-        std::cout << "connections " << connections.size() << std::endl;
-
-        number_of_fd = select( max_fd + 1 , &readfds , &writefds , &exceptfds, NULL); // &timeout);
+        std::cout << "connections " << connections.size()  << std::endl;
+        // to timeout keep-alive connections
+        if (keep_alive_count)
+            number_of_fd = select( max_fd + 1 , &readfds , &writefds , &exceptfds, &timeout);
+        else
+            number_of_fd = select( max_fd + 1 , &readfds , &writefds , &exceptfds, NULL);
         if (number_of_fd < 0)
-            throw std::runtime_error(strerror(errno));
+        {
+            perror("select failed");
+        }
+        else if (number_of_fd == 0)
+        {
+            // remove timed-out keep-alive connections
+            for (t_connections_it it = connections.begin(); it != connections.end(); ++it)
+            // for (std::size_t i = 0; i < connections.size(); ++i)
+            {
+                // Connection &second = connections[i];
+                if (it->second.status() == READING && it->second._in_buffer.empty())
+                {
+                    // std::cout << "timeout " << it->first << "|" << it->second.fd() << std::endl;
+                    to_remove.push(it->first);
+                    it->second._close();
+                }
+            }
+            while (!to_remove.empty())
+            {
+                // std::cout << "remove timeout " << to_remove.top() << std::endl;
+                connections.erase(to_remove.top());
+                to_remove.pop();
+            }
+            // throw std::runtime_error(strerror(errno));
+            continue;
+        }
         for (t_ports_it it = _listen_ports.begin(); it != _listen_ports.end(); ++it)
         {
             if (FD_ISSET(it->second, &readfds))
@@ -136,7 +135,7 @@ int accept_with_select(void)
                 }
                 else
                 {
-                    fcntl(fd, F_SETFL, O_NONBLOCK);
+                    fcntl(fd, F_SETFL, O_NONBLOCK); //mac only, can skip for linux
                     connections[fd] = Connection(fd, it->first);
                 }
             }
@@ -157,10 +156,13 @@ int accept_with_select(void)
                 --number_of_fd;
                 it->second.transmit();
             }
-            else if (FD_ISSET(fd, &exceptfds))
+            // todo OOB
+            if (FD_ISSET(fd, &exceptfds))
             {
                 --number_of_fd;
+                to_remove.push(fd);
                 it->second.except();
+                std::cout << "remove except fd" << std::endl;
             }
             if (it->second.status() == CLOSED)
                 to_remove.push(fd);
@@ -200,7 +202,7 @@ int create_listen_socket(int port, int back_log)
     return (listen_socket);
 }
 
-void start(int port, int back_log = 64)
+void start(int port, int back_log = 8)
 {
     _listen_ports[port] = -1;
     _listen_ports[9999] = -1;

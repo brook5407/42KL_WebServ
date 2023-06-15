@@ -15,12 +15,13 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "Configuration.hpp"
 #include "Connection.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
 #include "Middleware.hpp"
 #include "Webserv.hpp"
-
+#include <signal.h>
 
 int main(int argc, char **argv, char **)
 {
@@ -28,9 +29,8 @@ signal(SIGPIPE, SIG_IGN);
         if (argc != 2)
             throw std::runtime_error("usage: webserv <port>");
         int port = atoi(argv[1]);
-        Webserv webserv;
-        webserv.init();
-        webserv.start(port);
+        Webserver webserver("webserv.conf");
+        webserver.start(port);
         return EXIT_SUCCESS;
     try
     {
