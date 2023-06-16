@@ -1,6 +1,9 @@
 #include <string>
 #include <dirent.h>
 
+#define DT_DIR           4
+#define DT_REG           8
+
 //abstract class
 class AMiddleware
 {
@@ -31,8 +34,24 @@ class CheckMethod : public AMiddleware
 class IndexFile : public AMiddleware
 {
     public:
-        void execute(Request &, Response &)
+        void execute(Request &req, Response &)
         {
+            DIR *dir;
+
+            if ((*req._route)["index"].empty())
+                return;
+            dir = opendir(req._script_name.c_str());
+            if (dir == NULL)
+                return;
+            closedir(dir);
+            std::string index_file = req._script_name;
+            if (req._script_name[req._script_name.size() - 1] != '/')
+                index_file += "/";
+            index_file += (*req._route)["index"];
+            std::ifstream infile(index_file.c_str(), std::ios::in);
+            if (infile.is_open())
+                req._script_name = index_file;
+            std::cout << "test index " << index_file << " scrpt:" << req._script_name << std::endl;
         }
 };
 
@@ -41,33 +60,39 @@ class DirectoryListing: public AMiddleware
     public:
         void execute(Request &req, Response &res)
         {
-            // stringstream
-            // http://server/dir/
-            //config["root"] + uri
-            if (req._uri[req._uri.size() - 1] != '/')
-                return;
-
             DIR *dir;
             struct dirent *entry;
 
-            // Open directory
-            dir = opendir("./wwwroot/");
-            if (dir == NULL) {
-                perror("opendir");
+            dir = opendir(req._script_name.c_str());
+            if (dir == NULL)
                 return;
-            }
 
             res.write("<html><body>");
             res.write("<h1>Directory listing</h1>");
             res.write("<ol>");
 
-            // Read directory entries
             while ((entry = readdir(dir)) != NULL)
             {
-                res.write(std::string("<li><a href=\"/") + entry->d_name + "\">" + entry->d_name + "</a></li>");
+                // hide dot files
+                if (entry->d_name[0] == '.')
+                    continue;
+                if (entry->d_type != DT_DIR && entry->d_type != DT_REG)
+                    continue;
+                res.write(std::string() + "<li><a href=\"" + req._uri);
+                // add directory slash if not present
+                if (req._uri[req._uri.size() - 1] != '/')
+                    res.write("/");
+                res.write(std::string() + entry->d_name);
+                // append slash to directory
+                if (entry->d_type == DT_DIR)
+                    res.write("/");
+                res.write(std::string() + "\">" + entry->d_name);
+                if (entry->d_type == DT_DIR)
+                    res.write("/");
+                res.write("</a></li>");
             }
-            closedir(dir);
 
+            closedir(dir);
             res.write("</ol>");
             res.write("</html></body>");
             res.end();
@@ -92,9 +117,9 @@ class StaticFile: public AMiddleware
         {
             struct stat sb;
             //todo test permission
-            if (stat(("./wwwroot/" + req._uri).c_str(), &sb) == 0 && S_ISREG(sb.st_mode))
+            if (stat(req._script_name.c_str(), &sb) == 0 && S_ISREG(sb.st_mode))
             {
-                res.write_from_file("./wwwroot/" + req._uri);
+                res.write_from_file(req._script_name);
                 res.end();
             }
             //todo 404 with error page instead of continue to next middleware

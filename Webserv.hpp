@@ -30,7 +30,7 @@ void setup_middleware_pipeline()
  
     //pipeline
     _middlewares.push_back(Singleton<CheckMethod>::get_instance());
-    // _middlewares.push_back(Singleton<indexfile>::get_instance());
+    _middlewares.push_back(Singleton<IndexFile>::get_instance());
     // _middlewares.push_back(Singleton<Session>::get_instance()); // bonus
     // _middlewares.push_back(Singleton<Upload>::get_instance()); // /upload
     _middlewares.push_back(Singleton<DirectoryListing>::get_instance());
@@ -44,7 +44,7 @@ void execute_request(Connection &connection)
     Request request(connection._in_buffer);
     Response response(connection, _configuration);
 
-    request.translate_path(_configuration._routes);
+    request.translate_path(_configuration);
    
     for (size_t i = 0; !response.is_ended() && i < _middlewares.size(); ++i)
         _middlewares[i]->execute(request, response);

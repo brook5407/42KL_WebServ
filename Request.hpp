@@ -1,6 +1,7 @@
 class Request
 {
 public:
+    //todo: handle //, /. and /.. in path
     Request(const std::string &request)
     {
         std::istringstream iss(request);
@@ -30,24 +31,45 @@ public:
         }
         std::cout << "request " << _method << " " <<  _uri << " " << _protocol << std::endl;
     }
-    std::string translate_path(const t_configs &routes)
+    std::string translate_path( Configuration &configuration) //todo? const t_configs &
     {
+        // assert(!routes.empty());
         std::string route = _headers["Host"] + _uri; // localhost:8080/dir/index.html
-
-        //expects:
-        //uri localhost:8080/purple.png =>  / route
-        //uri localhost:8080/production or localhost:8080/production/ => /production route
-        while (!routes.empty() && routes.count(route) == 0)
+        // search exact (Host) route
+        while (configuration._routes.count(route) == 0)
         {
             std::size_t pos = route.find_last_of('/');
             if (pos == std::string::npos)
                 break;
             route = route.substr(0, pos);
         }
-        if (routes.count(route) == 0)
-            route = "default";
+        // use default route if no route found
+        if (configuration._routes.count(route) == 0)
+        {
+            // redo search route within default routes
+            route = configuration._default_server + _uri;
+            while (configuration._routes.count(route) == 0)
+            {
+                std::size_t pos = route.find_last_of('/');
+                if (pos == std::string::npos)
+                    break;
+                route = route.substr(0, pos);
+            }
+        }
+        _script_name = _uri;
+        {
+            std::size_t pos = route.find_first_of('/');
+            if (pos != std::string::npos)
+                _script_name = _script_name.substr(route.size() - pos);
+        }
+        _route = &configuration._routes[route];
         std::cout << "config route " << route << " for " << _headers["Host"] << _uri << std::endl;
-        _script_name = route;
+        _script_name = configuration._routes[route]["root"] + _script_name;
+        while (_script_name.find("/..") != std::string::npos)
+            _script_name.replace(_script_name.find("/.."), 2, "/");
+        while (_script_name.find("//") != std::string::npos)
+            _script_name.replace(_script_name.find("//"), 2, "/");
+        std::cout << "path " << _script_name << std::endl;
         return _script_name;
     }
     std::string _method;
@@ -55,6 +77,6 @@ public:
     std::string _protocol;
     std::string _search;
     std::string _script_name;
+    t_config *_route;
     std::map<std::string, std::string> _headers;
-    std::map<std::string, std::string> *_config;
 };
