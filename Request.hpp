@@ -4,7 +4,7 @@ public:
     //todo: throw httpexception which handled by middleware pipeline
     //todo: handle //, /. and /.. in path
     Request(const std::string &request)
-        : _method(""), _uri(""), _search(""), _headers(), _content_length(0), is_ready(false)
+        : _method(""), _uri(""), _search(""), _headers(), _content_length(0), is_ready(false), _body("")
     {
         const std::size_t pos_header_end = request.find("\r\n\r\n");
         if (pos_header_end == std::string::npos)
@@ -60,18 +60,81 @@ public:
         {
             // todo error handler
             _content_length = std::atoi(_headers["Content-Length"].c_str());
-            std::cout << "content length " << _content_length
-                    << "------------------" << std::endl
-                    << request.substr(pos_header_end + 4, _content_length) << std::endl
-                    << "=================" << std::endl;
+            // std::cout << "content length " << _content_length
+            //         << "------------------" << std::endl
+            //         << request.substr(pos_header_end + 4, _content_length) << std::endl
+            //         << "=================" << std::endl;
             if (_content_length > request.size() - pos_header_end - 4)
+                return; // stop incomplete body for more recv()
+            _body = request.substr(pos_header_end + 4, _content_length);
+        }
+        else if (_headers.count("Transfer-Encoding"))
+        {
+            if (_headers["Transfer-Encoding"] != "chunked")
             {
-                return ;
+                std::cout << "invalid Transfer-Encoding " << _headers["Transfer-Encoding"] << std::endl;
+                return;
             }
+            // std::cout << "xxxxxxxxxxxxxxxxxxxxxxxxxx" << std::endl << request.substr(pos_header_end + 4) << std::endl << "xxxxxxxxxxxxxxxxxxxxxxxxxx" << std::endl;
+            int length = 0;
+            std::string body;
+            bool complete = false;
+            const std::string hex = "0123456789ABCDEF";
+            for (pos = pos_header_end + 4; pos < request.size();)
+            {
+                std::size_t v = hex.find(std::toupper(request[pos]));
+                if (v != std::string::npos)
+                {
+                    length = length * 16 + v;
+                    ++pos;
+                }
+                else
+                {
+                    if (request.find("\r\n", pos) != pos)
+                    {
+                        std::cout << "invalid chunk size "
+                            << std::endl;
+                            // << length << " pos " << request.find("\r\n", pos) << " vs "  << pos << " ch " << request[pos] << std::endl;
+                        return;
+                    }
+                    pos += 2;
+                    if (length)
+                        body += request.substr(pos, length);
+                    pos += length;
+                    if (request.find("\r\n", pos) != pos)
+                    {
+                        std::cout << "invalid chunk data"
+                            << std::endl;
+                            //  << "=========" << std::endl << body << "=============" << std::endl << body.size() << " len "  << length << std::endl;
+                            // std::cout << "check " << pos << " vs " << request.find("\r\n", pos) << " ch: " << request[pos] << std::endl;
+                        return;
+                    }
+                    pos += 2;
+                    if (length == 0)
+                    {
+                        complete = true;
+                        break;
+                    }
+                    length = 0;
+                }
+            }
+            if (!complete)
+            {
+                std::cout << "incomplete chunked request " << std::endl;
+                return;
+            }
+            // std::cout << "chunked request body "
+            //     << "-----------------------" << std::endl 
+            //     << body << std::endl
+            //     << "=====================" << std::endl;
+            // save chunk to file, replace all
+            // std::ofstream ofs("chunked.txt", std::ios::out | std::ios::trunc | std::ios::binary);
+            // ofs << body;
+            _body = body;
         }
         is_ready = true;
     }
-    std::string translate_path( Configuration &configuration) //todo? const t_configs &
+    std::string translate_path(Configuration &configuration) //todo? const t_configs &
     {
         // assert(!routes.empty());
         std::string route = _headers["Host"] + _uri; // localhost:8080/dir/index.html
@@ -120,4 +183,5 @@ public:
     std::map<std::string, std::string> _headers;
     std::size_t _content_length;
     bool is_ready;
+    std::string _body;
 };

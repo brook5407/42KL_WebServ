@@ -223,6 +223,20 @@ class CgiRunner: public Middleware
         }
 };
 
+class Logger: public Middleware
+{
+    public:
+        void execute(Request &req, Response &res)
+        {
+            if (req._body.size())
+            {
+                std::ofstream ofs("body.log", std::ios::out | std::ios::trunc | std::ios::binary);
+                ofs << req._body;   
+            }
+            Middleware::execute(req, res);
+        }
+};
+
 template <typename T>
 struct Singleton
 {

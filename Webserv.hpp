@@ -24,6 +24,7 @@ public:
     Webserver(const std::string &config_path): _configuration(config_path)
     {
         _pipeline.add(Singleton<ErrorPage>::get_instance());
+        _pipeline.add(Singleton<Logger>::get_instance());
         // _pipeline.add(Singleton<Session>::get_instance()); // send cookie if not set, read cookie if set
         _pipeline.add(Singleton<CheckMethod>::get_instance());
         _pipeline.add(Singleton<Redirect>::get_instance());
