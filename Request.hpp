@@ -4,11 +4,12 @@ public:
     //todo: throw httpexception which handled by middleware pipeline
     //todo: handle //, /. and /.. in path
     Request(const std::string &request)
-        : _method(""), _uri(""), _search(""), _headers(), _content_length(0)
+        : _method(""), _uri(""), _search(""), _headers(), _content_length(0), is_ready(false)
     {
         const std::size_t pos_header_end = request.find("\r\n\r\n");
         if (pos_header_end == std::string::npos)
-            throw std::runtime_error("missing header end");
+            return ;
+            // throw std::runtime_error("missing header end");
 
         std::string protocol;
         std::istringstream iss(request);
@@ -59,12 +60,16 @@ public:
         {
             // todo error handler
             _content_length = std::atoi(_headers["Content-Length"].c_str());
-            std::cout << "content length " << _content_length << ", " << request << std::endl;
+            std::cout << "content length " << _content_length
+                    << "------------------" << std::endl
+                    << request.substr(pos_header_end + 4, _content_length) << std::endl
+                    << "=================" << std::endl;
             if (_content_length > request.size() - pos_header_end - 4)
             {
                 return ;
             }
         }
+        is_ready = true;
     }
     std::string translate_path( Configuration &configuration) //todo? const t_configs &
     {
@@ -114,4 +119,5 @@ public:
     t_config *_route;
     std::map<std::string, std::string> _headers;
     std::size_t _content_length;
+    bool is_ready;
 };

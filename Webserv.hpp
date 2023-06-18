@@ -35,10 +35,11 @@ public:
 
 void execute_request(Connection &connection)
 {
-    //todo parse request to decide status
-    if (connection.status() != READ)
+    // assert(connection.status() == READING);
+
+    Request request(connection._in_buffer); // parser
+    if (!request.is_ready)
         return;
-    Request request(connection._in_buffer);
     Response response(connection, _configuration);
 
     request.translate_path(_configuration);

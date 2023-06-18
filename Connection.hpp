@@ -1,6 +1,6 @@
 #include <fstream>
 #define BUFFER_SIZE 65536 * 4
-enum CONNECTION_STATUS {READING, READ, SENDING, SENT, CLOSED};
+enum CONNECTION_STATUS {READING, SENDING, CLOSED};
 
 class Connection
 {
@@ -38,7 +38,7 @@ class Connection
             }
             _in_buffer += std::string(buffer, length);
             std::cout << "read " << length << " bytes from " << _fd <<  std::endl;
-            _status = _in_buffer.find("\r\n\r\n") != std::string::npos? READ: READING;
+            // _status = _in_buffer.find("\r\n\r\n") != std::string::npos? READ: READING;
             //content-length & \r\n\r\n (handle malformed length), transfer-encoding: chunked
             //host mandatory
             //Connection: Keep-Alive | Keep-Alive: timeout=5, max=1000 | Connection: close
@@ -46,8 +46,8 @@ class Connection
         }
         void write(const std::string &data)
         {
-            if (_status != READ)
-                throw std::runtime_error("invalid status, expected READ");
+            if (_status != READING)
+                throw std::runtime_error("invalid status, expected READING");
             _out_buffer += data;
             _status = SENDING;
         }
@@ -55,8 +55,8 @@ class Connection
         {
             _last_activity = time(NULL);
             _status = SENDING;
-            if (_status != READ && _status != SENDING)
-                throw std::runtime_error("invalid status, expected READ or SENDING");
+            // if (_status != READ && _status != SENDING)
+            //     throw std::runtime_error("invalid status, expected READ or SENDING");
 
             if (!_out_buffer.empty())
             {
