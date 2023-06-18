@@ -6,12 +6,14 @@ class Connection
 {
     public:
         Connection() :
-            _in_buffer(), _out_buffer(), _ifile(), _server_port(), _fd(0), _status(READING) {}
+            _in_buffer(), _out_buffer(), _ifile(), _server_port(), _fd(0), _status(READING), _last_activity(time(NULL)) {}
         Connection(const Connection &other)
-            : _in_buffer(), _out_buffer(), _ifile(), _server_port(other._server_port), _fd(other._fd), _status(other._status) { } 
+            : _in_buffer(), _out_buffer(), _ifile(), _server_port(other._server_port), _fd(other._fd), 
+            _status(other._status), _last_activity(other._last_activity) { } 
         Connection(int fd, int server_port)
-            : _in_buffer(), _out_buffer(), _ifile(), _server_port(server_port), _fd(fd), _status(READING) {}
-        ~Connection() {  } //close(_fd);
+            : _in_buffer(), _out_buffer(), _ifile(), _server_port(server_port), _fd(fd), _status(READING),
+            _last_activity(time(NULL)) {}
+        ~Connection() {  } //close(_fd); // avoid auto-close due to copy
         Connection &operator=(const Connection &other)
         {
             _fd = other._fd;
@@ -24,8 +26,9 @@ class Connection
         int fd() const { return _fd; }
         void read()
         {
+            _last_activity = time(NULL);
             if (_status != READING)
-                throw std::runtime_error("invalid status");
+                throw std::runtime_error("invalid status, expected READING");
             char buffer[BUFFER_SIZE] = {};
             int length = recv(_fd, buffer, sizeof(buffer), 0); //MSG_NOSIGNAL
             if (length < 1)
@@ -44,15 +47,16 @@ class Connection
         void write(const std::string &data)
         {
             if (_status != READ)
-                throw std::runtime_error("invalid status");
+                throw std::runtime_error("invalid status, expected READ");
             _out_buffer += data;
             _status = SENDING;
         }
         void transmit()
         {
+            _last_activity = time(NULL);
             _status = SENDING;
             if (_status != READ && _status != SENDING)
-                throw std::runtime_error("invalid status");
+                throw std::runtime_error("invalid status, expected READ or SENDING");
 
             if (!_out_buffer.empty())
             {
@@ -115,6 +119,16 @@ class Connection
             }
         }
         enum CONNECTION_STATUS status() const { return _status; }
+        // different timeout for idle, long read, long write?
+        bool is_timeout(int sec = 5)
+        {
+            if (difftime(time(NULL), _last_activity) > sec)
+            {
+                _close();
+                return true;
+            }
+            return false;
+        }
         std::string _in_buffer;
         std::string _out_buffer;
         std::ifstream _ifile;
@@ -122,4 +136,5 @@ class Connection
     private:
         int _fd;
         enum CONNECTION_STATUS _status;
+        time_t _last_activity;
 };
