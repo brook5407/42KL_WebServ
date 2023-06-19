@@ -6,17 +6,24 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/13 15:50:01 by chchin            #+#    #+#             */
-/*   Updated: 2023/06/19 00:46:21 by chchin           ###   ########.fr       */
+/*   Updated: 2023/06/19 22:39:11 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "location.hpp"
 
+int ft_stoi(std::string str)
+{
+    std::istringstream ss(str);
+    int num;
+    ss >> num;
+    return num;
+}
+
 Location::Location()
 {
     this->_isRedirected = false;
     this->_autoIndex = false;
-    this->_cgiExtension = false;
 }
 
 Location::~Location()
@@ -46,14 +53,14 @@ void Location::setMethod(std::string method)
 
 void Location::setIndex(std::string path)
 {
-    this->_index = path;
+    this->_index.push_back(path);
 }
 
-void Location::setAutoIndex(std::string on_off)
+void Location::setAutoIndex(std::string autoIndex)
 {
-    if (on_off == "on")
+    if (autoIndex == "on")
         this->_autoIndex = true;
-    else if (on_off == "off")
+    else if (autoIndex == "off")
         this->_autoIndex = false;
     else
         throw std::invalid_argument("Error: Invalid autoindex in location");
@@ -63,19 +70,14 @@ void Location::setRedirection(std::string code, std::string url)
 {
     if (code != "301" && code != "302" && code != "303" && code != "307" && code != "308")
         throw std::invalid_argument("Error: Invalid redirection code in location");
-    this->_redirection.first = std::stoi(code);
+    this->_redirection.first = ft_stoi(code);
     this->_redirection.second = url;
     this->_isRedirected = true;
 }
 
 void Location::setCgiExtension(std::string extension)
 {
-    if (extension == "on")
-        this->_cgiExtension = true;
-    else if (extension == "off")
-        this->_cgiExtension = false;
-    else
-        throw std::invalid_argument("Error: Invalid cgi extension in location");
+    this->_cgiExtension.push_back(extension);
 }
 
 std::string Location::getPrefix() const
@@ -93,7 +95,7 @@ std::set<std::string> &Location::getMethods()
     return (this->_methods);
 }
 
-std::string Location::getIndex() const
+std::vector<std::string> &Location::getIndex()
 {
     return (this->_index);
 }
@@ -113,7 +115,7 @@ bool Location::checkRedirection() const
     return (this->_isRedirected);
 }
 
-bool Location::checkCgiExtension() const
+std::vector<std::string> &Location::checkCgiExtension()
 {
     return (this->_cgiExtension);
 }
@@ -126,9 +128,15 @@ std::ostream &operator<<(std::ostream &out, const Location &location)
     for (std::set<std::string>::iterator it = location._methods.begin(); it != location._methods.end(); it++)
         out << *it << " ";
     out << std::endl;
-    out << "Index page: " << location._index << std::endl;
+    out << "Index page: ";
+    for (std::vector<std::string>::const_iterator it = location._index.begin(); it != location._index.end(); it++)
+        out << *it << " ";
+    out << std::endl;
     out << "Autoindex: " << location._autoIndex << std::endl;
     out << "Redirection: " << location._redirection.first << " " << location._redirection.second << std::endl;
-    out << "Cgi extension: " << location._cgiExtension << std::endl;
+    out << "Cgi extension: ";
+    for (std::vector<std::string>::const_iterator it = location._cgiExtension.begin(); it != location._cgiExtension.end(); it++)
+        out << *it << " ";
+    out << std::endl;
     return (out);
 }
