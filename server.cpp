@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/13 15:50:21 by chchin            #+#    #+#             */
-/*   Updated: 2023/06/19 00:47:14 by chchin           ###   ########.fr       */
+/*   Updated: 2023/06/19 23:22:54 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,6 +57,8 @@ void	Server::setName(std::string name) {
 void	Server::setHost(std::string IP) {
     if (!checkIP(IP))
         throw std::invalid_argument("Error: Invalid IP address");
+    else if (IP == "localhost")
+        this->_host = "127.0.0.1";
     else
         this->_host = IP;
 }
@@ -64,16 +66,16 @@ void	Server::setHost(std::string IP) {
 void	Server::setPort(std::string port) {
     if (!checkDigit(port))
         throw std::invalid_argument("Error: Invalid port number");
-    if (std::stoi(port) > 65535)
+    if (ft_stoi(port) > 65535)
         throw std::invalid_argument("Error Invalid port number");
     else
-        this->_port = std::stoi(port);
+        this->_port = ft_stoi(port);
 }
 
 void	Server::setErrorPage(std::string code, std::string path) {
     if (!checkDigit(code))
         throw std::invalid_argument("Error: Invalid error code");
-    this->_errorPages.insert(std::pair<int, std::string>(std::stoi(code), path));
+    this->_errorPages.insert(std::pair<int, std::string>(ft_stoi(code), path));
 }
 
 void	Server::setMaxBodySize(std::string size) {
@@ -83,7 +85,7 @@ void	Server::setMaxBodySize(std::string size) {
     size.erase(lastchar);
     if (!checkDigit(size))
             throw std::invalid_argument("Error: Invalid client buffet size");
-    this->_maxBodySize = std::stoi(size);
+    this->_maxBodySize = ft_stoi(size);
 }
 
 void	Server::addLocation(Location *location) {
@@ -168,7 +170,7 @@ bool Server::checkIP(std::string IP)
             return (false);
         else if (!checkDigit(*it))
             return (false);
-        else if (std::stoi(*it) < 0 || std::stoi(*it) > 255)
+        else if (ft_stoi(*it) < 0 || ft_stoi(*it) > 255)
             return (false);
     }
     return (true);

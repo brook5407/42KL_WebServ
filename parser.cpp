@@ -49,8 +49,6 @@ Location *parse_location(conf_t &line_pos, conf_t end)
             line_pos++;
             return (location);
         }
-        else if (*line_pos->rbegin() != ';')
-            throw std::invalid_argument("Error: the line must end with semicolon >> " + *line_pos);
         else if (line[0] == "location")
         {
             if (line.size() != 3)
@@ -58,6 +56,8 @@ Location *parse_location(conf_t &line_pos, conf_t end)
             else
                 location->setPrefix(line[1]);
         }
+        else if (*line_pos->rbegin() != ';')
+            throw std::invalid_argument("Error: the line must end with semicolon >> " + *line_pos);
         else if (line[0] == "root")
         {
             if (line.size() != 2)
@@ -77,22 +77,25 @@ Location *parse_location(conf_t &line_pos, conf_t end)
         }
         else if (line[0] == "index")
         {
-            if (line.size() != 2)
-                throw std::invalid_argument("Error: index block requires a path"); 
+            if (line.size() < 2)
+                throw std::invalid_argument("Error: index block requires a filename"); 
             else
-                location->setIndex(line[1]);
+            {
+                for (size_t i = 1; i < line.size(); i++)
+                    location->setIndex(line[i]);
+            }
         }
         else if (line[0] == "autoindex")
         {
             if (line.size() != 2)
-                throw std::invalid_argument("Error: autoindex block only allow on or off");
+                throw std::invalid_argument("Error: autoindex block requires on or off");
             else
                 location->setAutoIndex(line[1]);
         }
         else if (line[0] == "cgi_extensions")
         {
-            if (line.size() != 2)
-                throw std::invalid_argument("Error: cgi_extensions block requires on or off");
+            if (line.size() < 2)
+                throw std::invalid_argument("Error: cgi_extensions block requires at least one extension");
             else
                 location->setCgiExtension(line[1]);
 
@@ -109,7 +112,7 @@ Location *parse_location(conf_t &line_pos, conf_t end)
         line_pos++;
     }
     return (location);
-}
+} 
 
 
 Server	*parse_server(conf_t &line_pos, conf_t end)
@@ -131,7 +134,7 @@ Server	*parse_server(conf_t &line_pos, conf_t end)
                 throw std::invalid_argument("Error: wrong location format");
             else
             {
-                line_pos++;
+                // line_pos++;
                 server->addLocation(parse_location(line_pos, end));
                 continue;
             }
@@ -180,7 +183,7 @@ Server	*parse_server(conf_t &line_pos, conf_t end)
             throw std::invalid_argument("Error: unknown block >> " + *line_pos);
         line_pos++;
     }
-    // std::cout << *server << std::endl; // DEBUG
+    std::cout << *server << std::endl; // DEBUG
     return (server);
 }
 
