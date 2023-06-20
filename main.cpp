@@ -14,6 +14,10 @@ int main(int argc, char **argv)
             return (1);
         }
         ConfigParser    parser(argv[1]);
+        std::vector<Server *>   servers = parser.getServers();
+        for (std::vector<Server *>::iterator it = servers.begin(); it != servers.end(); it++)
+            std::cout << **it << std::endl;
+
     }
     catch(const std::exception& e)
     {

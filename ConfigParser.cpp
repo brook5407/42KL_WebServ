@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/20 10:12:24 by chchin            #+#    #+#             */
-/*   Updated: 2023/06/20 10:57:20 by chchin           ###   ########.fr       */
+/*   Updated: 2023/06/20 11:04:58 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -224,4 +224,9 @@ void ConfigParser::checkServer()
                 throw std::invalid_argument("Error: two servers cannot have the same ip and port");
         }
     }
+}
+
+std::vector<Server *> &ConfigParser::getServers()
+{
+    return (_servers);
 }
