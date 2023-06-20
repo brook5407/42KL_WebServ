@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 10:03:53 by chchin            #+#    #+#             */
-/*   Updated: 2023/06/18 22:50:33 by chchin           ###   ########.fr       */
+/*   Updated: 2023/06/20 10:56:31 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,9 +17,11 @@
 # include <map>
 # include <iostream>
 # include <iterator>
-# include "location.hpp"
+# include "Location.hpp"
 
 typedef std::vector<std::string>::iterator conf_t;
+
+std::vector<std::string> ft_split(std::string str, std::string delimiter);
 
 class Location;
 
