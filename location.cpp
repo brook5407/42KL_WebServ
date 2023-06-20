@@ -6,11 +6,11 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/13 15:50:01 by chchin            #+#    #+#             */
-/*   Updated: 2023/06/19 22:39:11 by chchin           ###   ########.fr       */
+/*   Updated: 2023/06/20 10:46:11 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "location.hpp"
+#include "Location.hpp"
 
 int ft_stoi(std::string str)
 {

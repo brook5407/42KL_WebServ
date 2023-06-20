@@ -6,11 +6,11 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/13 15:50:21 by chchin            #+#    #+#             */
-/*   Updated: 2023/06/19 23:22:54 by chchin           ###   ########.fr       */
+/*   Updated: 2023/06/20 10:46:16 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "server.hpp"
+#include "Server.hpp"
 
 std::vector<std::string> ft_split(std::string str, std::string delimiter)
 {
