@@ -1,11 +1,16 @@
 NAME		:= webserv
 OBJFILES	:= webserv.o server.o location.o ConfigParser.o Webserver.o CGI.o
 DEPFILES	:= $(OBJFILES:.o=.d)
-# ASAN		:= -fsanitize=address
-CXXFLAGS	:= -Wall -Wextra -Werror -Wshadow -std=c++98 -fPIE -MMD $(ASAN) -g
+ASAN		:= -fsanitize=address
+CXXFLAGS	:= -Wall -Wextra -Werror -Wshadow -std=c++98 -MMD $(ASAN) -g
 LDLIBS		:= -lstdc++ $(ASAN)
 VPATH		:= srcs
-CXX			:=clang
+
+# for Kishyan wsl without g++
+ifeq ($(shell which g++), )
+	CXX			:= clang
+	CXXFLAGS	+= -fPIE
+endif
 
 .PHONY: all clean fclean re test
 
