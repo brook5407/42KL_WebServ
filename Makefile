@@ -1,10 +1,11 @@
 NAME		:= webserv
-OBJFILES	:= webserv.o server.o location.o ConfigParser.o Webserver.o
+OBJFILES	:= webserv.o server.o location.o ConfigParser.o Webserver.o CGI.o
 DEPFILES	:= $(OBJFILES:.o=.d)
 # ASAN		:= -fsanitize=address
-CXXFLAGS	:= -Wall -Wextra -Werror -Wshadow -std=c++98 -pedantic -MMD $(ASAN) -g
+CXXFLAGS	:= -Wall -Wextra -Werror -Wshadow -std=c++98 -fPIE -MMD $(ASAN) -g
 LDLIBS		:= -lstdc++ $(ASAN)
 VPATH		:= srcs
+CXX			:=clang
 
 .PHONY: all clean fclean re test
 

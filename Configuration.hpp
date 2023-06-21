@@ -30,6 +30,7 @@ private:
         //key "host:80" => "host" without port
         _routes["127.0.0.1:8888"]["root"] = "./wwwroot";
         _routes["127.0.0.1:8888"]["index"] = "";
+        _routes["127.0.0.1:8888"]["cgi"] = ".sh";
         _routes["127.0.0.1:8888/localhost8888"]["root"] = "./wwwroot/localhost8888";
         _routes["127.0.0.1:8888/localhost8888"]["index"] = "index.html";
 

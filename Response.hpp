@@ -96,9 +96,12 @@ class Response
         {
             return _is_ended;
         }
-
-    private:
+        int get_fd(void)
+        {
+            return (_connection.fd());
+        }
         Connection &_connection;
+    private:
         Configuration &_configuration;
         int _status;
         std::string _content;

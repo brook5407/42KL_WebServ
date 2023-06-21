@@ -35,7 +35,10 @@ void Webserver::_process_request(Connection &connection)
     Response response(connection, _configuration);
     request.translate_path(_configuration);
     _pipeline.execute(request, response);
+    if (Singleton<CgiRunner>::get_instance()->is_CGI)
+        return ;
     //todo: part of _pipeline?
+    std::cout << "before end: " << std::endl;
     response.end();
     connection._in_buffer.clear();
 }
@@ -83,7 +86,7 @@ void Webserver::_loop_sockets(t_listen_port_fd listen_port_fd)
             ++it;
         }
 
-        std::cout << "connections " << connections.size() << " max:" << max_fd << std::endl;
+        //std::cout << "connections " << connections.size() << " max:" << max_fd << std::endl;
         number_of_fd = select(max_fd + 1 , &readfds , &writefds , &exceptfds, 
                             connections.size()? &timeout: NULL);
         // log_if_errno(number_of_fd, "select failed");
@@ -147,6 +150,14 @@ void Webserver::_on_cgi_exit(int)
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
     {
         std::cout << "pid " << pid << " exited with status " << status << std::endl;
+        CgiRunner   &runner = *(Singleton<CgiRunner>::get_instance());
+        //runner._CGI.back()->is_exit(30);
+        Configuration configuration_test;
+        Connection connection_test = *(runner._connect.back());
+        Response response_test(connection_test, configuration_test);
+        //response_test.write(runner._CGI.back()->output);
+        response_test.write_from_file("./wwwroot/index.html");
+        response_test.end();
     }
 }
 

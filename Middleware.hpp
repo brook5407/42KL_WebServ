@@ -6,9 +6,10 @@
 
 #include <string>
 #include <dirent.h>
+#include "CGI.hpp"
 
-#define DT_DIR  4
-#define DT_REG  8
+// #define DT_DIR  4
+// #define DT_REG  8
 
 template <typename T>
 std::string to_string(T value)
@@ -207,17 +208,32 @@ class ErrorPage: public Middleware
 class CgiRunner: public Middleware
 {
     public:
+        std::vector<CGI *>  _CGI;
+        std::vector<Connection *>  _connect;
+        bool    is_CGI;
         void execute(Request &req, Response &res)
         {
             if (req._route->find("cgi") != req._route->end())
             {
+                is_CGI = false;
                 const std::string extension = (*req._route)["cgi"];
                 if (req._script_name.size() > extension.size())
                 {
                     if (req._script_name.find(extension, req._script_name.size() - extension.size())
                             != std::string::npos)
                     {
-                        throw HttpException(500, "Internal Server Error");
+                        is_CGI = true;
+                        CGI cgi(res.get_fd());
+                        cgi.setup_bash(req._script_name);
+                        _CGI.push_back(&cgi);
+                        _connect.push_back(&(res._connection));
+                        // if (cgi.is_exit(30) && true)
+                        // {
+                        //     std::cout << "cgi output: " << cgi.output << std::endl;
+                        //     res.write(cgi.output);
+                        // }
+                        // else
+                        //     throw HttpException(500, "Internal Server Error");
                         // fork and exec cgi
                         return;
                     }
