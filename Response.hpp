@@ -1,3 +1,8 @@
+#ifndef RESPONSE_HPP
+#define RESPONSE_HPP
+
+#include "Configuration.hpp"
+#include "Connection.hpp"
 #include <sys/stat.h>
 #include <ctime>
 
@@ -100,3 +105,5 @@ class Response
         std::string _filepath;
         bool _is_ended;
 };
+
+#endif

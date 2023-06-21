@@ -1,40 +1,31 @@
-#include <list>
+#include "Webserver.hpp"
+#include "ConfigParser.hpp"
 
-// todo tele netstat established and connections count
-// todo check netstat browser TIME_WAIT
-class Webserver
+#include <unistd.h>
+#include <signal.h>
+#include <string.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/select.h>
+#include <sys/wait.h>
+
+Webserver *Webserver::_instance = NULL;
+
+Webserver::Webserver(const std::string &config_filepath)
 {
+    _instance = this;
+    ConfigParser    parser(config_filepath);
+    _serverConfigs = parser.getServers();
+    // for (std::vector<Server *>::iterator it = servers.begin(); it != servers.end(); it++)
+    //     std::cout << **it << std::endl;
+}
 
-private:
+Webserver::~Webserver(void)
+{
+    _instance = NULL;
+}
 
-// typedef std::map<int, Connection> t_connections;
-typedef std::list<Connection> t_connections;
-typedef t_connections::iterator t_connections_it;
-t_connections connections;
-
-Configuration _configuration;
-
-typedef std::map<int, int> t_ports;
-typedef t_ports::iterator t_ports_it;
-t_ports _listen_ports;
-
-Pipeline _pipeline;
-
-public:
-    Webserver(const std::string &config_path): _configuration(config_path)
-    {
-        _pipeline.add(Singleton<ErrorPage>::get_instance());
-        _pipeline.add(Singleton<Logger>::get_instance());
-        // _pipeline.add(Singleton<Session>::get_instance()); // send cookie if not set, read cookie if set
-        _pipeline.add(Singleton<CheckMethod>::get_instance());
-        _pipeline.add(Singleton<Redirect>::get_instance());
-        _pipeline.add(Singleton<IndexFile>::get_instance());
-        _pipeline.add(Singleton<CgiRunner>::get_instance()); // upload.cgi?
-        _pipeline.add(Singleton<DirectoryListing>::get_instance());
-        _pipeline.add(Singleton<StaticFile>::get_instance());
-    }
-
-void execute_request(Connection &connection)
+void Webserver::_process_request(Connection &connection)
 {
     // assert(connection.status() == READING);
 
@@ -42,11 +33,8 @@ void execute_request(Connection &connection)
     if (!request.is_ready)
         return;
     Response response(connection, _configuration);
-
     request.translate_path(_configuration);
-   
     _pipeline.execute(request, response);
-    
     //todo: part of _pipeline?
     response.end();
     connection._in_buffer.clear();
@@ -57,13 +45,14 @@ void execute_request(Connection &connection)
 // 2) send data
 // 3) read & process data (eg parse & do request)
 // 4) accept new connection
-void loop_sockets(void)
+void Webserver::_loop_sockets(t_listen_port_fd listen_port_fd)
 {
     fd_set readfds, writefds, exceptfds; //fd 0-1023 1024
-    struct timeval timeout = {5,0};
+    struct timeval timeout = {POLL_TIMEOUT_SEC,0};
     int max_fd, number_of_fd, fd;
     struct sockaddr_in address;
     int length;
+    t_connections connections;
 
     while (1)
     {
@@ -72,12 +61,12 @@ void loop_sockets(void)
         FD_ZERO(&writefds);
         FD_ZERO(&exceptfds);
 
-        for (t_ports_it it = _listen_ports.begin(); it != _listen_ports.end(); ++it)
+        for (t_listen_port_fd::iterator it = listen_port_fd.begin(); it != listen_port_fd.end(); ++it)
         {
             FD_SET(it->second, &readfds); // multi site => multi port
             max_fd = std::max(max_fd, it->second);
         }
-        for (t_connections_it it = connections.begin(); it != connections.end();)
+        for (t_connections::iterator it = connections.begin(); it != connections.end();)
         {
             if (it->status() == CLOSED || it->is_timeout(timeout.tv_sec))
             {
@@ -100,16 +89,16 @@ void loop_sockets(void)
         // log_if_errno(number_of_fd, "select failed");
         if (number_of_fd <= 0)
             continue;
-        for (t_connections_it it = connections.begin(); it != connections.end(); ++it)
+        for (t_connections::iterator it = connections.begin(); it != connections.end(); ++it)
         {
             if (FD_ISSET(it->fd(), &writefds))
                 it->transmit();
             else if (FD_ISSET(it->fd(), &readfds))
-                it->read(), execute_request(*it);
+                it->read(), _process_request(*it);
             else if (FD_ISSET(it->fd(), &exceptfds))
                 it->except();
         }
-        for (t_ports_it it = _listen_ports.begin(); it != _listen_ports.end(); ++it)
+        for (t_listen_port_fd::iterator it = listen_port_fd.begin(); it != listen_port_fd.end(); ++it)
         {
             if (!FD_ISSET(it->second, &readfds))
                 continue;
@@ -123,7 +112,7 @@ void loop_sockets(void)
     }
 }
 
-int create_listen_socket(int port, int back_log)
+int Webserver::_create_listen_socket(int port)
 {
     int listen_socket;
     int length = sizeof(sockaddr_in);
@@ -142,23 +131,37 @@ int create_listen_socket(int port, int back_log)
         throw std::runtime_error(strerror(errno));
     if (bind(listen_socket, (struct sockaddr *)&address, length) < 0)
         throw std::runtime_error(strerror(errno));
-    if (listen(listen_socket, back_log) < 0)
+    if (listen(listen_socket, LISTEN_BACKLOG) < 0)
         throw std::runtime_error(strerror(errno));
     return (listen_socket);
 }
 
-void start(int port, int back_log = 8)
+void Webserver::_on_cgi_exit(int)
 {
-    _listen_ports[port] = -1;
-    _listen_ports[9999] = -1;
-    for (std::map<int, int>::iterator it = _listen_ports.begin(); it != _listen_ports.end(); ++it)
+    int status;
+    pid_t pid;
+    if (_instance == NULL)
     {
-        std::cout << "webserv @ " << it->first << std::endl;
-        it->second = create_listen_socket(it->first, back_log);
+        std::cout << "Server exited" << std::endl;
     }
-    loop_sockets();
-    for (std::map<int, int>::iterator it = _listen_ports.begin(); it != _listen_ports.end(); ++it)
-        close(it->second);
+    while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
+    {
+        std::cout << "pid " << pid << " exited with status " << status << std::endl;
+    }
 }
 
-};
+void Webserver::loop(void)
+{
+    signal(SIGPIPE, SIG_IGN); // ignore broken pipe
+    signal(SIGCHLD, _on_cgi_exit); // waitpid
+
+    t_listen_port_fd listen_port_fd;
+    for (size_t i = 0; i < _serverConfigs.size(); ++i)
+    {
+        std::cout << "Webserver listening on port " << _serverConfigs[i]->getPort() << std::endl;
+        listen_port_fd[_serverConfigs[i]->getPort()] = _create_listen_socket(_serverConfigs[i]->getPort());
+    }
+    _loop_sockets(listen_port_fd);
+    for (t_listen_port_fd::iterator it = listen_port_fd.begin(); it != listen_port_fd.end(); ++it)
+        close(it->second);
+}

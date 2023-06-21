@@ -11,17 +11,21 @@
 /* ************************************************************************** */
 
 #include "ConfigParser.hpp"
+#include <fstream>
+#include <sstream>
+#include <iostream>
+#include <vector>
 
 ConfigParser::ConfigParser(std::string configFile)
 {
-    std::ifstream   file(configFile);
+    std::ifstream   file(configFile.c_str());
     if (file)
     {
         std::stringstream   buffer;
         buffer << file.rdbuf();
         file.close();
         std::string str = buffer.str();
-        std::vector<std::string> config = ft_split(str, "\n");
+        std::vector<std::string> config = ft_split(str, "\r\n");
         parseConfig(config);
     }
     else
@@ -37,7 +41,7 @@ void ConfigParser::parseConfig(std::vector<std::string> config)
 {
     for (conf_t line_pos = config.begin(); line_pos != config.end(); line_pos++)
     {
-        std::vector<std::string> line = ft_split(*line_pos, " ;\t\n");
+        std::vector<std::string> line = ft_split(*line_pos, " ;\t\r\n");
         if (!line.size() || line[0] == "")
         {
             line_pos++;
@@ -64,7 +68,7 @@ void ConfigParser::parseServer(conf_t &line_pos, conf_t end)
     Server *server = new Server();
     while (line_pos != end)
     {
-        std::vector<std::string> line = ft_split(*line_pos, " ;\t\n");
+        std::vector<std::string> line = ft_split(*line_pos, " ;\t\r\n");
         if (!line.size() || line[0] == "")
         {
             line_pos++;
@@ -135,7 +139,7 @@ Location *ConfigParser::parseLocation(conf_t &line_pos, conf_t end)
     Location *location = new Location();
     while (line_pos != end)
     {
-        std::vector<std::string> line = ft_split(*line_pos, " ;\t\n");
+        std::vector<std::string> line = ft_split(*line_pos, " ;\t\r\n");
         if (!line.size() || line[0] == "")
         {
             line_pos++;

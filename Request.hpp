@@ -1,3 +1,8 @@
+#ifndef REQUEST_HPP
+#define REQUEST_HPP
+
+#include <cstdlib>
+
 class Request
 {
 public:
@@ -185,3 +190,5 @@ public:
     bool is_ready;
     std::string _body;
 };
+
+#endif

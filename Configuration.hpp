@@ -1,3 +1,10 @@
+#ifndef CONFIGURATION_HPP
+#define CONFIGURATION_HPP
+
+#include "ConfigParser.hpp"
+#include <map>
+#include <string>
+
 typedef std::map<std::string, std::string> t_config;
 typedef std::map<std::string, t_config > t_configs;
 typedef t_configs::iterator t_configs_it;
@@ -5,9 +12,10 @@ typedef t_configs::iterator t_configs_it;
 class Configuration
 {
 public:
-    Configuration(const std::string &config_file): _routes(), _reason_phrase(), _mime_types()
+    Configuration()
+        : _routes(), _reason_phrase(), _mime_types()
     {
-        load_routes(config_file);
+        load_routes();
         load_reason_phrases();
         load_mime_types();
     }
@@ -16,7 +24,7 @@ public:
     std::map<std::string, std::string> _mime_types;
     std::string _default_server;
 private:
-    void load_routes(const std::string &)
+    void load_routes(void)
     {
         //route keys by (hostname, port, uri), uri truncated trailing slash
         //key "host:80" => "host" without port
@@ -35,6 +43,7 @@ private:
         // dir-listing
         _routes["localhost:9999"]["root"] = "./wwwroot/localhost9999";
         _routes["localhost:9999"]["index"] = "";
+        _routes["localhost:9999"]["cgi"] = ".sh";
         _routes["localhost:9999/dir"]["root"] = "./wwwroot/.hidden";
         _routes["localhost:9999/dir"]["index"] = "";
 
@@ -179,3 +188,4 @@ private:
         _mime_types["7z"] = "application/x-7z-compressed";
     }
 };
+#endif

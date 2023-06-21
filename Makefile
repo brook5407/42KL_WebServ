@@ -1,5 +1,5 @@
 NAME		:= webserv
-OBJFILES	:= webserv.o
+OBJFILES	:= webserv.o server.o location.o ConfigParser.o Webserver.o
 DEPFILES	:= $(OBJFILES:.o=.d)
 # ASAN		:= -fsanitize=address
 CXXFLAGS	:= -Wall -Wextra -Werror -Wshadow -std=c++98 -pedantic -MMD $(ASAN) -g
@@ -28,7 +28,8 @@ test: $(NAME)
 	@sleep 1
 	curl localhost:$(PORT)
 	curl -H "Transfer-Encoding: chunked" -d "key=value&name=text" localhost:9999 -v
-	curl -H "Transfer-Encoding: chunked" --data-binary @Makefile localhost:9999 -v
+	curl -H "Transfer-Encoding: chunked" -H "Content-Disposition: attachment; filename=\"filename.png\"" --data-binary @Makefile localhost:9999 -v
+	curl -v -F key1=value1 -F upload=@Makefile localhost:9999 -v
 	@echo PING | nc localhost $(PORT)
 	@echo PONG | nc localhost $(PORT)
 	@printf "" | nc localhost $(PORT)

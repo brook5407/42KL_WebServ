@@ -1,3 +1,8 @@
+#ifndef CONNECTION_HPP
+#define CONNECTION_HPP
+
+#include <sys/socket.h>
+#include <unistd.h>
 #include <fstream>
 #define BUFFER_SIZE 65536 * 4
 enum CONNECTION_STATUS {READING, SENDING, CLOSED};
@@ -138,3 +143,5 @@ class Connection
         enum CONNECTION_STATUS _status;
         time_t _last_activity;
 };
+
+#endif

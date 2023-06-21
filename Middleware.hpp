@@ -1,3 +1,9 @@
+#ifndef MIDDLEWARE_HPP
+#define MIDDLEWARE_HPP
+
+#include "Request.hpp"
+#include "Response.hpp"
+
 #include <string>
 #include <dirent.h>
 
@@ -11,6 +17,16 @@ std::string to_string(T value)
     os << value;
     return os.str();
 }
+
+template <typename T>
+struct Singleton
+{
+    static T *get_instance()
+    {
+        static T instance;
+        return &instance;
+    }
+};
 
 class HttpException: public std::exception
 {
@@ -55,18 +71,6 @@ class Middleware
 
     protected:
         Middleware *_next;
-};
-
-class Pipeline : public Middleware
-{
-    public:
-        void add(Middleware *middleware)
-        {
-            Middleware *walk = this;
-            while (walk->getNext())
-                walk = walk->getNext();
-            walk->setNext(middleware);
-        }
 };
 
 class CheckMethod : public Middleware
@@ -237,12 +241,28 @@ class Logger: public Middleware
         }
 };
 
-template <typename T>
-struct Singleton
+class Pipeline : public Middleware
 {
-    static T *get_instance()
-    {
-        static T instance;
-        return &instance;
-    }
+    public:
+        Pipeline()
+        {
+            add(Singleton<ErrorPage>::get_instance());
+            add(Singleton<Logger>::get_instance());
+            // add(Singleton<Session>::get_instance());
+            add(Singleton<CheckMethod>::get_instance());
+            add(Singleton<Redirect>::get_instance());
+            add(Singleton<IndexFile>::get_instance());
+            add(Singleton<CgiRunner>::get_instance()); // upload.cgi?
+            add(Singleton<DirectoryListing>::get_instance());
+            add(Singleton<StaticFile>::get_instance());
+        };
+        void add(Middleware *middleware)
+        {
+            Middleware *walk = this;
+            while (walk->getNext())
+                walk = walk->getNext();
+            walk->setNext(middleware);
+        }
 };
+
+#endif
