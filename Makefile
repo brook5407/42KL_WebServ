@@ -2,7 +2,7 @@ NAME		:= webserv
 OBJFILES	:= webserv.o server.o location.o ConfigParser.o Webserver.o CGI.o
 DEPFILES	:= $(OBJFILES:.o=.d)
 ASAN		:= -fsanitize=address
-CXXFLAGS	:= -Wall -Wextra -Werror -Wshadow -std=c++98 -MMD $(ASAN) -g
+CXXFLAGS	:= -Wall -Wextra -Werror -Wshadow -std=c++98 -MMD $(ASAN) -g -Isrcs -I.
 LDLIBS		:= -lstdc++ $(ASAN)
 VPATH		:= srcs
 
