@@ -3,6 +3,7 @@
 
 #define LISTEN_BACKLOG 8
 #define POLL_TIMEOUT_SEC 5
+#define CONNECTION_TIMEOUT_SEC 30
 
 #include "Configuration.hpp"
 #include "Middleware.hpp"

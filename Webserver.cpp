@@ -38,9 +38,8 @@ void Webserver::_process_request(Connection &connection)
     if (Singleton<CgiRunner>::get_instance()->is_CGI)
         return ;
     //todo: part of _pipeline?
-    std::cout << "before end: " << std::endl;
     response.end();
-    connection._in_buffer.clear();
+    // connection._in_buffer.clear();
 }
 
 // reverse of execution, due to loop
@@ -51,7 +50,7 @@ void Webserver::_process_request(Connection &connection)
 void Webserver::_loop_sockets(t_listen_port_fd listen_port_fd)
 {
     fd_set readfds, writefds, exceptfds; //fd 0-1023 1024
-    struct timeval timeout = {POLL_TIMEOUT_SEC,0};
+    struct timeval timeout;
     int max_fd, number_of_fd, fd;
     struct sockaddr_in address;
     int length;
@@ -60,6 +59,8 @@ void Webserver::_loop_sockets(t_listen_port_fd listen_port_fd)
     while (1)
     {
         max_fd = 0;
+        timeout.tv_sec = POLL_TIMEOUT_SEC;
+        timeout.tv_usec = 0;
         FD_ZERO(&readfds);
         FD_ZERO(&writefds);
         FD_ZERO(&exceptfds);
@@ -69,9 +70,19 @@ void Webserver::_loop_sockets(t_listen_port_fd listen_port_fd)
             FD_SET(it->second, &readfds); // multi site => multi port
             max_fd = std::max(max_fd, it->second);
         }
+
+        // loop Singleton<CgiRunner>::get_instance()->_CGI
+        // {
+        //     if (cgi->is_timeout())
+        //     {
+        //         response 502 error
+        //         remove from _cgi
+        //     }
+        // }
+    
         for (t_connections::iterator it = connections.begin(); it != connections.end();)
         {
-            if (it->status() == CLOSED || it->is_timeout(timeout.tv_sec))
+            if (it->status() == CLOSED || it->is_timeout(CONNECTION_TIMEOUT_SEC)) //30 at29
             {
                 it = connections.erase(it);
                 continue;
@@ -86,10 +97,12 @@ void Webserver::_loop_sockets(t_listen_port_fd listen_port_fd)
             ++it;
         }
 
-        //std::cout << "connections " << connections.size() << " max:" << max_fd << std::endl;
+        std::cout << "connections " << connections.size() << " max:" << max_fd << std::endl;
         number_of_fd = select(max_fd + 1 , &readfds , &writefds , &exceptfds, 
                             connections.size()? &timeout: NULL);
         // log_if_errno(number_of_fd, "select failed");
+        if (number_of_fd < 0)
+            perror("select failed");
         if (number_of_fd <= 0)
             continue;
         for (t_connections::iterator it = connections.begin(); it != connections.end(); ++it)
@@ -139,6 +152,10 @@ int Webserver::_create_listen_socket(int port)
     return (listen_socket);
 }
 
+// todo from pid get CGI object & connection object.
+//   maybe map<pid, object>
+// verify kill server, kill cgi
+// remove done cgi (as well as destroy)
 void Webserver::_on_cgi_exit(int)
 {
     int status;
@@ -147,22 +164,27 @@ void Webserver::_on_cgi_exit(int)
     {
         std::cout << "Server exited" << std::endl;
     }
+    CgiRunner  &runner = *(Singleton<CgiRunner>::get_instance());
+    std::list<CGI>::iterator it;
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
     {
         std::cout << "pid " << pid << " exited with status " << status << std::endl;
-        CgiRunner   &runner = *(Singleton<CgiRunner>::get_instance());
-        //runner._CGI.back()->is_exit(30);
-        Configuration configuration_test;
-        Connection connection_test = *(runner._connect.back());
-        Response response_test(connection_test, configuration_test);
-        //response_test.write(runner._CGI.back()->output);
-        response_test.write_from_file("./wwwroot/index.html");
-        response_test.end();
+
+        for (it = runner._CGI.begin(); it != runner._CGI.end(); ++it)
+        {
+            if (it->child_pid == pid)
+            {
+                it->response(); //todo check error 500 if error/empty, timeout not here but loop_soket()
+                runner._CGI.erase(it); // remove done CGI
+                break;
+            }
+        }
     }
 }
 
 void Webserver::loop(void)
 {
+    // signal(SIGINT, _request_exit); // ctrl-c
     signal(SIGPIPE, SIG_IGN); // ignore broken pipe
     signal(SIGCHLD, _on_cgi_exit); // waitpid
 
@@ -175,4 +197,5 @@ void Webserver::loop(void)
     _loop_sockets(listen_port_fd);
     for (t_listen_port_fd::iterator it = listen_port_fd.begin(); it != listen_port_fd.end(); ++it)
         close(it->second);
+    // kill all cgi
 }

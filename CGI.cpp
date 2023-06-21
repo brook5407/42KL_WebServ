@@ -1,8 +1,16 @@
 #include "CGI.hpp"
+#include <stdio.h>
 
-CGI::CGI(int socket) : _socket(socket)
+CGI::CGI(Response response) : _response(response),  child_pid(-1), file_in(NULL), file_out(NULL),
+ file_in_fd(-1), file_out_fd(-1)
+{ }
+
+CGI::~CGI()
 {
-
+	if (file_in)
+		fclose(file_in);
+	if (file_out)
+		fclose(file_out);
 }
 
 bool	CGI::check_file(std::string &route)
@@ -29,6 +37,7 @@ void	CGI::_execute_cgi(void)
 	// check if file exists
 	if (!check_file(argv[1]))
 	{
+		throw CGIException();
 		std::string	fav_req = "HTTP/1.1 404 Not Found\nContent-Type: text/plain\nContent-Length: 9\nConnection: close\n\nNot Found";
 		int sent = send(_socket, fav_req.c_str(), fav_req.size(), 0);
 		if (sent < 0)
@@ -73,19 +82,17 @@ void	CGI::_execute_cgi(void)
 	}
 }
 
-int		CGI::is_exit(int timeout)
+
+int		CGI::is_timeout(int timeout)
 {
 	// if want to use WNOHANG, have to add a slight delay
 	// allows child process to finish first before trying to read from fd ?
 	//usleep(1000000);
-	char cgiBuffer[30000] = {0};
-	int bytes = 1;
-	(void)timeout;
-	// if (difftime(time(NULL), start_time) > timeout)
-	// {
-	// 	kill(child_pid, SIGKILL);
-	// 	return true;
-	// }
+	if (difftime(time(NULL), start_time) > timeout)
+	{
+		kill(child_pid, SIGKILL); // test SIGCHLD trigger
+		return true;
+	}
 	// if (waitpid(child_pid, NULL, WNOHANG) < 0)
 	// 	return false;
 
@@ -97,12 +104,25 @@ int		CGI::is_exit(int timeout)
 	// 		return true ;
 	// 	}
 	// }
+	return false;
+}
 
-	lseek(file_out_fd, 0, SEEK_SET);
-	while (bytes > 0)
+const std::string &CGI::get_output(void)
+{
+	char cgiBuffer[30000];
+	int bytes = 1;
+
+	if (lseek(file_out_fd, 0, SEEK_SET) == -1)
 	{
-		bytes = read(file_out_fd, cgiBuffer, 10000);
-		output += std::string(cgiBuffer, bytes);
+		perror("lseek");
+	}
+	else
+	{
+		while (bytes > 0)
+		{
+			bytes = read(file_out_fd, cgiBuffer, sizeof(cgiBuffer));
+			output += std::string(cgiBuffer, bytes);
+		}
 	}
 	std::cout << "output size: " << output.size() << std::endl;
 	// waitpid(child_pid, NULL, 0);
@@ -110,19 +130,16 @@ int		CGI::is_exit(int timeout)
 	// int bytes = read(file_out_fd, cgiBuffer, 10000);
 	// std::cout << cgiBuffer << std::endl;
 	// output += std::string(cgiBuffer, bytes);
-
-	close(file_in_fd);
-	close(file_out_fd);
-	fclose(file_in);
-	fclose(file_out);
-	return true;
+	return output;
 }
 
 void	CGI::response(void)
 {
-	int sent = send(_socket, output.c_str(), output.size(), 0);
+	_response.write(get_output());
+	_response.end();
+	// int sent = send(_socket, output.c_str(), output.size(), 0);
 
-	if (sent < 0)
-		throw CGIException();
-	close(_socket);
+	// if (sent < 0)
+	// 	throw CGIException();
+	// close(_socket);
 }

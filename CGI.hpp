@@ -17,16 +17,18 @@
 # include <unistd.h>
 # include <errno.h>
 # include <iterator>
+# include "Response.hpp"
 
 class CGI
 {
 	public:
-		CGI(int socket);
+		CGI(Response);
+		~CGI(void);
 		bool	check_file(std::string &route);
 		void	response(void);
 		void	setup_bash(std::string script);
-		int		is_exit(int timeout);
-		void	_execute_cgi(void);
+		int		is_timeout(int timeout);
+
 
 		class CGIException : public std::exception
 		{
@@ -38,9 +40,11 @@ class CGI
 		};
 		std::string					output;
 		int							_socket;
-
-	private:
+		Response					_response;
 		pid_t						child_pid;
+	private:
+		void	_execute_cgi(void);
+		const std::string &get_output(void);
 		std::vector<std::string>	argv;
 		time_t						start_time;
 		std::string					_body;

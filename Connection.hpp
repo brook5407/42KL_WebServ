@@ -33,7 +33,11 @@ class Connection
         {
             _last_activity = time(NULL);
             if (_status != READING)
-                throw std::runtime_error("invalid status, expected READING");
+            {
+                std::cout << "invalid status, expected READING. request-size:" << _in_buffer.size() << std::endl;
+                // throw std::runtime_error("invalid status, expected READING");
+                return;
+            }
             char buffer[BUFFER_SIZE] = {};
             int length = recv(_fd, buffer, sizeof(buffer), 0); //MSG_NOSIGNAL
             if (length < 1)
@@ -52,7 +56,10 @@ class Connection
         void write(const std::string &data)
         {
             if (_status != READING)
-                throw std::runtime_error("invalid status, expected READING");
+            {
+                std::cout << "existing " << _out_buffer << std::endl << "===" << data << std::endl;
+                throw std::runtime_error("invalid status, expected READING ");
+            }
             _out_buffer += data;
             _status = SENDING;
         }
@@ -73,6 +80,8 @@ class Connection
                 }
                 std::cout << "SENT " << length << " to " << _fd <<  std::endl;
                 _out_buffer = _out_buffer.substr(length);
+
+                //todo maybe check no file then end this earlier
             }
             else
             {

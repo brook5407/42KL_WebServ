@@ -11,6 +11,10 @@ class Response
     public:
         Response(Connection &connection, Configuration &configuration)
             : _connection(connection), _configuration(configuration),  _status(0), _is_ended(false) {}
+        Response(Response const &src)
+            : _connection(src._connection), _configuration(src._configuration), 
+             _status(src._status),_content(src._content), _filepath(src._filepath), _is_ended(src._is_ended) {}
+
         void write(const std::string &data)
         {
             _content += data;
@@ -23,10 +27,10 @@ class Response
         {
             _status = code;
         }
-        int status()
-        {
-            return _status;
-        }
+        // int status()
+        // {
+        //     return _status;
+        // }
         void header(const std::string &, const std::string &)
         {
             // _headers[key] = value;
@@ -54,6 +58,7 @@ class Response
                 {
                     // todo can be other error, eg denied. use error page instead
                     _connection.write("HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n");
+                    _connection._in_buffer.clear(); // todo: refactor?
                     return;
                 }
 
@@ -91,17 +96,14 @@ class Response
                 // ss << _connection._ifile.rdbuf();
             }
             _connection.write(ss.str());
+            _connection._in_buffer.clear(); //!!!! this is important for all exit branch !!!
         }
         bool is_ended(void)
         {
             return _is_ended;
         }
-        int get_fd(void)
-        {
-            return (_connection.fd());
-        }
-        Connection &_connection;
     private:
+        Connection &_connection;
         Configuration &_configuration;
         int _status;
         std::string _content;

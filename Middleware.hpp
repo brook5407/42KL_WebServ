@@ -4,12 +4,15 @@
 #include "Request.hpp"
 #include "Response.hpp"
 
+#include <list>
 #include <string>
 #include <dirent.h>
 #include "CGI.hpp"
 
-// #define DT_DIR  4
-// #define DT_REG  8
+#ifndef DT_DIR
+# define DT_DIR  4
+# define DT_REG  8
+#endif
 
 template <typename T>
 std::string to_string(T value)
@@ -185,7 +188,7 @@ class StaticFile: public Middleware
         }
 };
 
-// todo this should be part of Response, instead of middleware?
+// todo must check error file exist
 class ErrorPage: public Middleware
 {
     public:
@@ -208,8 +211,7 @@ class ErrorPage: public Middleware
 class CgiRunner: public Middleware
 {
     public:
-        std::vector<CGI *>  _CGI;
-        std::vector<Connection *>  _connect;
+        std::list<CGI>  _CGI;
         bool    is_CGI;
         void execute(Request &req, Response &res)
         {
@@ -223,10 +225,9 @@ class CgiRunner: public Middleware
                             != std::string::npos)
                     {
                         is_CGI = true;
-                        CGI cgi(res.get_fd());
+                        _CGI.push_back(CGI(res));
+                        CGI &cgi = _CGI.back();
                         cgi.setup_bash(req._script_name);
-                        _CGI.push_back(&cgi);
-                        _connect.push_back(&(res._connection));
                         // if (cgi.is_exit(30) && true)
                         // {
                         //     std::cout << "cgi output: " << cgi.output << std::endl;
