@@ -2,9 +2,9 @@ NAME		:= webserv
 OBJFILES	:= webserv.o server.o location.o ConfigParser.o Webserver.o CGI.o
 DEPFILES	:= $(OBJFILES:.o=.d)
 ASAN		:= -fsanitize=address
-CXXFLAGS	:= -Wall -Wextra -Werror -Wshadow -std=c++98 -MMD $(ASAN) -g -Isrcs -I.
+CXXFLAGS	:= -Wall -Wextra -Werror -Wshadow -std=c++98 -MMD $(ASAN) -g -Isrc -I.
 LDLIBS		:= -lstdc++ $(ASAN)
-VPATH		:= srcs
+VPATH		:= src
 
 # for Kishyan wsl without g++
 ifeq ($(shell which g++), )
