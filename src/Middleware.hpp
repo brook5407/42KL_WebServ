@@ -73,6 +73,18 @@ class Middleware
             return _next;
         }
 
+        // add check file function here
+        bool	file_exists(std::string &route)
+        {
+	        std::ifstream	file(route.c_str());
+	        return file.good();
+        }
+
+        bool   file_executable(std::string &route)
+        {
+            return (access(route.c_str(), X_OK) == 0);
+        }
+
     protected:
         Middleware *_next;
 };
@@ -224,6 +236,10 @@ class CgiRunner: public Middleware
                     if (req._script_name.find(extension, req._script_name.size() - extension.size())
                             != std::string::npos)
                     {
+                        if (!file_exists(req._script_name))
+                            throw HttpException(404, "File not found");
+                        if (!file_executable(req._script_name))
+                            throw HttpException(403, "File is not executable");
                         is_CGI = true;
                         _CGI.push_back(CGI(res));
                         CGI &cgi = _CGI.back();
