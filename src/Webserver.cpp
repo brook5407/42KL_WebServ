@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <sys/wait.h>
+#include <sys/un.h>
 
 Webserver *Webserver::_instance = NULL;
 
@@ -52,7 +53,7 @@ void Webserver::_loop_sockets(t_listen_port_fd listen_port_fd)
     fd_set readfds, writefds, exceptfds; //fd 0-1023 1024
     struct timeval timeout;
     int max_fd, number_of_fd, fd;
-    struct sockaddr_in address;
+    struct sockaddr_un address;
     int length;
     t_connections connections;
 
@@ -118,10 +119,15 @@ void Webserver::_loop_sockets(t_listen_port_fd listen_port_fd)
         {
             if (!FD_ISSET(it->second, &readfds))
                 continue;
+            length = sizeof(address);
             fd = accept(it->second, (struct sockaddr *)&address, (socklen_t*)&length);
             //log_if_errno(fd, "accept failed");
             if (fd < 0)
+            {
+                perror("accept failed");
+                std::cout << "accept from " << it->second << std::endl;
                 continue;
+            }
             // fcntl(fd, F_SETFL, O_NONBLOCK); //mac only, can skip for linux
             connections.push_back(Connection(fd, it->first));
         }
