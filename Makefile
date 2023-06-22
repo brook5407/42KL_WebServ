@@ -1,5 +1,5 @@
 NAME		:= webserv
-OBJFILES	:= webserv.o \
+OBJFILES	:= webserv.o Connection.o \
 				Webserver.o Request.o Response.o CGI.o \
 				server.o location.o ConfigParser.o
 DEPFILES	:= $(OBJFILES:.o=.d)
