@@ -21,6 +21,7 @@ class Connection
         ~Connection() {  } //close(_fd); // avoid auto-close due to copy
         Connection &operator=(const Connection &other)
         {
+            std::cout << "assigning connection " << this->_last_activity << std::endl;
             _fd = other._fd;
             _server_port = other._server_port;
             // _in_buffer = other._in_buffer;
@@ -136,9 +137,11 @@ class Connection
         // different timeout for idle, long read, long write?
         bool is_timeout(int sec = 5)
         {
-            if (difftime(time(NULL), _last_activity) > sec)
+            const double duration_sec = difftime(time(NULL), _last_activity);
+            if (duration_sec > sec)
             {
                 _close();
+                std::cout << "timeout " << _fd << " after " << duration_sec << std::endl;
                 return true;
             }
             return false;

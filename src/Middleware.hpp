@@ -6,6 +6,8 @@
 
 #include <list>
 #include <string>
+#include <fstream>
+#include <iostream>
 #include <dirent.h>
 #include "CGI.hpp"
 
@@ -35,7 +37,8 @@ struct Singleton
 class HttpException: public std::exception
 {
     public:
-        HttpException(int status_code, const std::string &message): _message(message), _status_code(status_code) {}
+        HttpException(int status_code, const std::string &message)
+            : _message(message), _status_code(status_code) {}
         virtual ~HttpException() throw() {}
         virtual const char *what() const throw()
         {
@@ -194,7 +197,7 @@ class StaticFile: public Middleware
         {
             struct stat sb;
             if (stat(req._script_name.c_str(), &sb) == 0 && S_ISREG(sb.st_mode))
-                res.write_from_file(req._script_name);
+                res.send_file(req._script_name);
             else
                 throw HttpException(404, "Not found");
         }
@@ -215,7 +218,7 @@ class ErrorPage: public Middleware
                 std::cout << "HTTP exception: " << e.what() << std::endl;
                 std::string error_page = "./error_pages/" + to_string(e.status_code()) + ".html";
                 std::cout << "error page: " << error_page << " for " << req._uri << std::endl;
-                res.write_from_file(error_page);
+                res.send_file(error_page);
             }
         }
 };
@@ -274,6 +277,56 @@ class Logger: public Middleware
         }
 };
 
+class UploadDelete: public Middleware
+{
+    public:
+        // todo think about http response status code for different failures
+        void execute(Request &req, Response &res)
+        {
+            // for curl & tester, not for browser multipart/form-data
+            if ((req._method == "POST" || req._method == "PUT"))
+            {
+                //post /dir/<f> , /dir/filename/<f>,  w/wo:Content-Disposition
+                std::string filename = get_filename(req._headers["Content-Disposition"]);
+                if (filename.size())
+                    filename = req._script_name + "/" + filename; // prefix document root
+                else
+                    filename = req._script_name;
+                save_file(filename, req._body);
+                res.write(filename.substr(filename.find_last_of('/') + 1) + " has been uploaded!");
+            }
+            else if (req._method == "DELETE")
+            {
+                throw HttpException(500, "to be implemented");
+            }
+            else
+                Middleware::execute(req, res);
+        }
+    private:
+        std::string get_filename(const std::string &Content_disposition)
+        {
+            std::string filename;
+            std::string::size_type pos = Content_disposition.find("filename=");
+            if (pos != std::string::npos)
+            {
+                filename = Content_disposition.substr(pos + 10);
+                filename.erase(filename.size() - 1);
+            }
+            return filename;
+        }
+        void save_file(const std::string &filename, const std::string &content)
+        {
+            if (filename.empty())
+                    throw HttpException(400, "Bad Request: no filename");
+            if (content.empty())
+                throw HttpException(400, "Bad Request: no content");
+            std::ofstream ofs(filename.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
+            if (ofs.fail())
+                throw HttpException(500, "Internal Server Error: fail to open file");
+            ofs << content;
+        }
+};
+
 class Pipeline : public Middleware
 {
     public:
@@ -284,10 +337,11 @@ class Pipeline : public Middleware
             // add(Singleton<Session>::get_instance());
             add(Singleton<CheckMethod>::get_instance());
             add(Singleton<Redirect>::get_instance());
-            add(Singleton<IndexFile>::get_instance());
-            add(Singleton<CgiRunner>::get_instance()); // upload.cgi?
-            add(Singleton<DirectoryListing>::get_instance());
-            add(Singleton<StaticFile>::get_instance());
+            add(Singleton<IndexFile>::get_instance()); // all methods
+            add(Singleton<CgiRunner>::get_instance()); // all methods: upload.cgi?
+            add(Singleton<UploadDelete>::get_instance()); // POST,PUT,DELETE must after cgi
+            add(Singleton<DirectoryListing>::get_instance()); //GET
+            add(Singleton<StaticFile>::get_instance()); //GET
         };
         void add(Middleware *middleware)
         {
