@@ -1,5 +1,8 @@
 #include "Connection.hpp"
 #include <iostream>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 
 void Connection::read()
 {
@@ -55,7 +58,9 @@ void Connection::transmit()
         std::cout << "SENT " << length << " to " << _fd <<  std::endl;
         _out_buffer = _out_buffer.substr(length);
 
-        //todo maybe check no file then end this earlier
+        //stop sending when buffer sent and no file to send
+        if (_out_buffer.empty() && !_ifile.is_open())
+            _status = READING;
     }
     else
     {
@@ -115,9 +120,48 @@ bool Connection::is_timeout(int sec)
     const double duration_sec = difftime(time(NULL), _last_activity);
     if (duration_sec > sec)
     {
+        std::cout << "timeout #" << _fd << " after " << duration_sec << std::endl;
         _close();
-        std::cout << "timeout " << _fd << " after " << duration_sec << std::endl;
         return true;
     }
     return false;
+}
+
+void Connection::get_details(int connection_socket) {
+    struct sockaddr_in client_address;
+    socklen_t client_address_len = sizeof(client_address);
+    if (getpeername(connection_socket, (struct sockaddr*)&client_address, &client_address_len) == -1)
+        // throw std::runtime_error(strerror(errno));
+        perror("Connection");
+
+    struct sockaddr_in server_address;
+    socklen_t server_address_len = sizeof(server_address);
+    if (getsockname(connection_socket, (struct sockaddr*)&server_address, &server_address_len) == -1)
+        // throw std::runtime_error(strerror(errno));
+        perror("Connection");
+
+    char client_ip[INET_ADDRSTRLEN];
+    if (inet_ntop(AF_INET, &(client_address.sin_addr), client_ip, INET_ADDRSTRLEN) == NULL)
+        // throw std::runtime_error(strerror(errno));
+        perror("Connection");
+
+    char server_ip[INET_ADDRSTRLEN];
+    if (inet_ntop(AF_INET, &(server_address.sin_addr), server_ip, INET_ADDRSTRLEN) == NULL)
+        // throw std::runtime_error(strerror(errno));
+        perror("Connection");
+
+    _client_ip = std::string(client_ip);
+    _server_ip = std::string(server_ip);
+    _client_port = ntohs(client_address.sin_port);
+    _server_port = ntohs(server_address.sin_port);
+    
+}
+
+std::ostream& operator<<(std::ostream& os, const Connection& connection)
+{
+    os << "Connection #" << connection._fd << " "
+     << connection._client_ip << ":" << connection._client_port 
+     << (connection._status == READING? " > ": connection._status == SENDING? " < ": " - ")
+     << connection._server_ip << ":" << connection._server_port;
+    return os;
 }
