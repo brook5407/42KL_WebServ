@@ -51,9 +51,9 @@ Request::Request(const std::string &request)
         value = request.substr(pos_key_end + 2, pos_end - pos_key_end - 2);
         _headers[key] = value;
         pos_start = pos_end + 2; // next line begin after \r\n
-        std::cout << "header " << key << ":" << value << std::endl;
+        // std::cout << "header " << key << ":" << value << std::endl;
     }
-    std::cout << "Request: " << _method << "|" <<  _uri << "|" << protocol << std::endl;
+    // std::cout << "Request: " << _method << "|" <<  _uri << "|" << protocol << std::endl;
     //todo: default for missing header[Host], consider ":80" as ""
     if (_headers.count("Content-Length"))
     {
@@ -166,12 +166,13 @@ std::string Request::translate_path(Configuration &configuration) //todo? const 
             _script_name = _script_name.substr(route.size() - pos);
     }
     _route = &configuration._routes[route];
-    std::cout << "config route " << route << " for " << _headers["Host"] << _uri << std::endl;
     _script_name = configuration._routes[route]["root"] + _script_name;
     while (_script_name.find("/..") != std::string::npos)
         _script_name.replace(_script_name.find("/.."), 2, "/");
     while (_script_name.find("//") != std::string::npos)
         _script_name.replace(_script_name.find("//"), 2, "/");
-    std::cout << "path " << _script_name << std::endl;
+    std::cout << "Request: " << _method << ' ' << _headers["Host"] << _uri
+            << ", location: " << route
+            << ", path " << _script_name << std::endl;
     return _script_name;
 }
