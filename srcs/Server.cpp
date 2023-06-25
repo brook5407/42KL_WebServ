@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/13 15:50:21 by chchin            #+#    #+#             */
-/*   Updated: 2023/06/20 10:46:16 by chchin           ###   ########.fr       */
+/*   Updated: 2023/06/25 23:42:45 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,14 +40,9 @@ std::vector<std::string> ft_split(std::string str, std::string delimiter)
 }
 
 Server::Server() {
-    // _IP = "localhost";
-    // _port = 80;
-    // _maxBodySize = 1000000;
-    // _names.push_back("default");
 }
 
 Server::~Server() {
-    delete this;
 }
 
 void	Server::setName(std::string name) {
@@ -88,7 +83,7 @@ void	Server::setMaxBodySize(std::string size) {
     this->_maxBodySize = ft_stoi(size);
 }
 
-void	Server::addLocation(Location *location) {
+void	Server::addLocation(Location location) {
     this->_routes.push_back(location);
 }
 
@@ -138,8 +133,8 @@ std::ostream& operator<<(std::ostream& os, const Server& server) {
         os << it->first << ": " << it->second << std::endl;
     }
     os << "Max body size: " << server.getMaxBodySize() << std::endl;
-    for (std::vector<Location *>::const_iterator it = server._routes.begin(); it != server._routes.end(); it++) {
-        os << *(*it) << std::endl;
+    for (std::vector<Location>::const_iterator it = server._routes.begin(); it != server._routes.end(); it++) {
+        os << *it << std::endl;
     }
     return (os);
 }

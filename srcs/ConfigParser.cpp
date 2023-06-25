@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/20 10:12:24 by chchin            #+#    #+#             */
-/*   Updated: 2023/06/20 11:04:58 by chchin           ###   ########.fr       */
+/*   Updated: 2023/06/25 23:31:57 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,7 +61,7 @@ void ConfigParser::parseConfig(std::vector<std::string> config)
 
 void ConfigParser::parseServer(conf_t &line_pos, conf_t end)
 {
-    Server *server = new Server();
+    Server server;
     while (line_pos != end)
     {
         std::vector<std::string> line = ft_split(*line_pos, " ;\t\n");
@@ -78,7 +78,7 @@ void ConfigParser::parseServer(conf_t &line_pos, conf_t end)
                 throw std::invalid_argument("Error: wrong location format");
             else
             {
-                server->addLocation(parseLocation(line_pos, end));
+                server.addLocation(parseLocation(line_pos, end));
                 continue;
             }
         }
@@ -93,8 +93,8 @@ void ConfigParser::parseServer(conf_t &line_pos, conf_t end)
                     throw std::invalid_argument("Error: listen block requires an ip and a port");
                 else
                 {
-                    server->setHost(ip_port[0]);
-                    server->setPort(ip_port[1]);
+                    server.setHost(ip_port[0]);
+                    server.setPort(ip_port[1]);
                 }
             }
         }
@@ -105,7 +105,7 @@ void ConfigParser::parseServer(conf_t &line_pos, conf_t end)
             else
             {
                 for (size_t i = 1; i < line.size(); i++)
-                    server->setName(line[i]);
+                    server.setName(line[i]);
             }
         }
         else if (line[0] == "client_max_body_size")
@@ -113,14 +113,14 @@ void ConfigParser::parseServer(conf_t &line_pos, conf_t end)
             if (line.size() != 2)
                 throw std::invalid_argument("Error: client_max_body_size block requires a size");
             else
-                server->setMaxBodySize(line[1]);
+                server.setMaxBodySize(line[1]);
         }
         else if (line[0] == "error_page")
         {
             if (line.size() != 3)
                 throw std::invalid_argument("Error: error_page block requires a code and a path");
             else
-                server->setErrorPage(line[1], line[2]);
+                server.setErrorPage(line[1], line[2]);
         }
         else
             throw std::invalid_argument("Error: unknown block >> " + *line_pos);
@@ -130,9 +130,9 @@ void ConfigParser::parseServer(conf_t &line_pos, conf_t end)
     // std::cout << *server << std::endl; // DEBUG
 }
 
-Location *ConfigParser::parseLocation(conf_t &line_pos, conf_t end)
+Location ConfigParser::parseLocation(conf_t &line_pos, conf_t end)
 {
-    Location *location = new Location();
+    Location location;
     while (line_pos != end)
     {
         std::vector<std::string> line = ft_split(*line_pos, " ;\t\n");
@@ -151,7 +151,7 @@ Location *ConfigParser::parseLocation(conf_t &line_pos, conf_t end)
             if (line.size() != 3)
                 throw std::invalid_argument("Error: location block requires a path and a block");
             else
-                location->setPrefix(line[1]);
+                location.setPrefix(line[1]);
         }
         else if (*line_pos->rbegin() != ';')
             throw std::invalid_argument("Error: the line must end with semicolon >> " + *line_pos);
@@ -160,7 +160,7 @@ Location *ConfigParser::parseLocation(conf_t &line_pos, conf_t end)
             if (line.size() != 2)
                 throw std::invalid_argument("Error: root block requires a path");
             else
-                location->setRoot(line[1]);
+                location.setRoot(line[1]);
         }
         else if (line[0] == "methods")
         {
@@ -169,7 +169,7 @@ Location *ConfigParser::parseLocation(conf_t &line_pos, conf_t end)
             else
             {
                 for (size_t i = 1; i < line.size(); i++)
-                    location->setMethod(line[i]);
+                    location.setMethod(line[i]);
             }
         }
         else if (line[0] == "index")
@@ -179,7 +179,7 @@ Location *ConfigParser::parseLocation(conf_t &line_pos, conf_t end)
             else
             {
                 for (size_t i = 1; i < line.size(); i++)
-                    location->setIndex(line[i]);
+                    location.setIndex(line[i]);
             }
         }
         else if (line[0] == "autoindex")
@@ -187,14 +187,14 @@ Location *ConfigParser::parseLocation(conf_t &line_pos, conf_t end)
             if (line.size() != 2)
                 throw std::invalid_argument("Error: autoindex block requires on or off");
             else
-                location->setAutoIndex(line[1]);
+                location.setAutoIndex(line[1]);
         }
         else if (line[0] == "cgi_extensions")
         {
             if (line.size() < 2)
                 throw std::invalid_argument("Error: cgi_extensions block requires at least one extension");
             else
-                location->setCgiExtension(line[1]);
+                location.setCgiExtension(line[1]);
 
         }
         else if (line[0] == "return")
@@ -202,7 +202,7 @@ Location *ConfigParser::parseLocation(conf_t &line_pos, conf_t end)
             if (line.size() != 3)
                 throw std::invalid_argument("Error: return block requires a code and a path");
             else
-                location->setRedirection(line[1], line[2]);
+                location.setRedirection(line[1], line[2]);
         }
         else
             throw std::invalid_argument("Error: unknown block >> " + *line_pos);
@@ -213,20 +213,20 @@ Location *ConfigParser::parseLocation(conf_t &line_pos, conf_t end)
 
 void ConfigParser::checkServer()
 {
-    std::vector<Server *>::iterator it1;
-    std::vector<Server *>::iterator it2;
+    std::vector<Server>::iterator it1;
+    std::vector<Server>::iterator it2;
     
     for (it1 = _servers.begin(); it1 != _servers.end(); it1++)
     {
         for (it2 = _servers.begin(); it2 != _servers.end(); it2++)
         {
-            if (it1 != it2 && (*it1)->getHost() == (*it2)->getHost() && (*it1)->getPort() == (*it2)->getPort())
+            if (it1 != it2 && (*it1).getHost() == (*it2).getHost() && (*it1).getPort() == (*it2).getPort())
                 throw std::invalid_argument("Error: two servers cannot have the same ip and port");
         }
     }
 }
 
-std::vector<Server *> &ConfigParser::getServers()
+std::vector<Server> &ConfigParser::getServers()
 {
     return (_servers);
 }
