@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   location.cpp                                       :+:      :+:    :+:   */
+/*   Location.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/13 15:50:01 by chchin            #+#    #+#             */
-/*   Updated: 2023/06/20 10:46:11 by chchin           ###   ########.fr       */
+/*   Updated: 2023/06/25 23:50:01 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,9 +27,7 @@ Location::Location()
 }
 
 Location::~Location()
-{
-    delete this;
-}
+{}
 
 void Location::setPrefix(std::string prefix)
 {
@@ -45,7 +43,8 @@ void Location::setMethod(std::string method)
 {
     if (method.compare("GET") && 
 		method.compare("POST") && 
-		method.compare("DELETE"))
+		method.compare("DELETE") &&
+        method.compare("PUT"))
 		throw std::invalid_argument("Error: Invalid method in location");
 	
 	_methods.insert(method);

@@ -6,7 +6,7 @@
 /*   By: kishyan <kishyan@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/19 23:41:40 by chchin            #+#    #+#             */
-/*   Updated: 2023/06/21 10:14:24 by kishyan          ###   ########.fr       */
+/*   Updated: 2023/06/25 23:27:15 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,14 +29,14 @@ class ConfigParser
         
         void    parseConfig(std::vector<std::string> config);
         void    parseServer(conf_t &line_pos, conf_t end);
-        Location *parseLocation(conf_t &line_pos, conf_t end);
+        Location parseLocation(conf_t &line_pos, conf_t end);
 
         void    checkServer();
 
-        std::vector<Server *>   &getServers();
+        std::vector<Server>   &getServers();
         
     private:
-        std::vector<Server *>   _servers;
+        std::vector<Server>   _servers;
 };
 
 #endif
