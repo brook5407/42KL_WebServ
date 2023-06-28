@@ -5,45 +5,30 @@
 #include "Connection.hpp"
 #include <sys/stat.h>
 #include <ctime>
+#include <algorithm>
 
 class Response
 {
     public:
         Response(Connection &connection, Configuration &configuration)
-            : _connection(connection), _configuration(configuration),  _status(0) {}
+            : _connection(connection), _configuration(configuration) {}
 
         Response(Response const &src)
-            : _connection(src._connection), _configuration(src._configuration), 
-             _status(src._status),_content(src._content), _filepath(src._filepath) {}
+            : _connection(src._connection), _configuration(src._configuration) 
+            //  _headers(src._headers) 
+            {}
 
-        void write(const std::string &data)
-        {
-            _content += data;
-        }
-        void send_file(const std::string &filepath)
-        {
-            _filepath = filepath;
-        }
-        void status(int code)
-        {
-            _status = code;
-        }
-        // int status()
-        // {
-        //     return _status;
-        // }
-        void header(const std::string &, const std::string &)
-        {
-            // _headers[key] = value;
-        }
-        void end(void);
+        void send_location(int status_code, const std::string &location);
+        void send_content(int status_code, const std::string &data, const std::string &type = "text/html");
+        void send_file(int status_code, const std::string &filepath);
+        void send_cgi_fd(int fd);
 
-    private:
         Connection &_connection;
+    private:
         Configuration &_configuration;
-        int _status;
-        std::string _content;
-        std::string _filepath;
+
+        void add_header(std::stringstream &ss, int status_code);
+        void end(std::stringstream &ss);
 };
 
 #endif

@@ -170,3 +170,8 @@ bool Server::checkIP(std::string IP)
     }
     return (true);
 }
+
+std::vector<Location> &Server::getRoutes()
+{
+    return (_routes);
+}

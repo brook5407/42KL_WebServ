@@ -4,14 +4,16 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <fstream>
-#define BUFFER_SIZE 65536 * 4
+#include <iostream>
+
+#define BUFFER_SIZE 100 * 1024 * 1024
 enum CONNECTION_STATUS {READING, SENDING, CLOSED};
 
 class Connection
 {
     public:
         Connection() :
-            _in_buffer(),  _ifile(), _server_port(),_out_buffer(), _fd(0),
+            _in_buffer(),  _ifile(), _server_port(), _in_fd(-1), _out_buffer(), _fd(0),
             _status(READING), _last_activity(time(NULL))
             {}
         Connection(const Connection &other)
@@ -20,18 +22,19 @@ class Connection
             _server_ip(other._server_ip),
             _client_port(other._client_port),
             _client_ip(other._client_ip),
+            _in_fd(other._in_fd),
             _out_buffer(),_fd(other._fd), 
             _status(other._status), _last_activity(other._last_activity)
             {
 
             } 
         Connection(int fd)
-            : _in_buffer(), _ifile(),_out_buffer(), _fd(fd), _status(READING),
+            : _in_buffer(), _ifile(), _in_fd(-1), _out_buffer(), _fd(fd), _status(READING),
             _last_activity(time(NULL))
             {
                 get_details(fd);
             }
-        ~Connection() {  } //close(_fd); // avoid auto-close due to copy
+        ~Connection() { } //close(_fd); // avoid auto-close due to copy
         Connection &operator=(const Connection &)
         {
             throw std::runtime_error("Connection assignment operator not implemented");
@@ -52,8 +55,10 @@ class Connection
         std::string _server_ip;
         int _client_port;
         std::string _client_ip;
+        int _in_fd;
     private:
         void get_details(int connection_socket);
+        void show_duration(void);
         void _close();
         void transmit_file();
 
@@ -61,6 +66,7 @@ class Connection
         int _fd;
         enum CONNECTION_STATUS _status;
         time_t _last_activity;
+        unsigned long _start_time;
 };
 
 #endif

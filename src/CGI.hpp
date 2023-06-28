@@ -24,12 +24,20 @@ class CGI
 	public:
 		CGI(Response);
 		~CGI(void);
-		bool	check_file(std::string &route);
+		void	setup_bash(const std::string &handler, const std::string &script, const std::string &body);
 		void	response(void);
-		void	setup_bash(std::string script);
 		int		is_timeout(int timeout);
-
-
+		void	add_envp(std::string key, const std::string &value)
+		{
+			for (size_t i = 0; i < key.size(); ++i)
+			{
+				if (key[i] == '-')
+					key[i] = '_';
+				else
+					key[i] = std::toupper(key[i]);
+			}
+			_envp.push_back(key + "=" + value);
+		}
 		class CGIException : public std::exception
 		{
 			public:
@@ -38,20 +46,26 @@ class CGI
 					return ("CGI ERROR!");
 				}
 		};
-		std::string					output;
-		int							_socket;
-		Response					_response;
+		// int							_socket;
 		pid_t						child_pid;
+
+		Response					_response;
 	private:
-		void	_execute_cgi(void);
-		const std::string &get_output(void);
+		bool	check_file(std::string &route);
+		void	_execute_cgi(const std::string &body);
+		// const std::string &get_output(void);
+		char	**convert_envp(const std::vector<std::string> &vec);
+
+		// std::string					output;
 		std::vector<std::string>	argv;
 		time_t						start_time;
-		std::string					_body;
+		// std::string					_body;
 		FILE						*file_in;
 		FILE						*file_out;
 		int							file_in_fd;
 		int							file_out_fd;
+		std::vector<std::string>	_envp;
+
 };
 
 #endif

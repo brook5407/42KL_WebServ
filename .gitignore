@@ -1,6 +1,10 @@
 bak/
 wwwroot/
+YoupiBanane/
 *.d
 *.o
 *.exe
+*.log
+*.raw
 webserv
+*tester

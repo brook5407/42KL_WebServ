@@ -2,26 +2,33 @@
 #include <iostream>
 #include <cstdlib>
 
+static bool parse_request_line(
+    const std::string &request, std::string &method, std::string &uri, std::string &search)
+{
+    std::string protocol;
+    std::istringstream iss(request);
+    iss >> method >> uri >> protocol;
+    if (iss.fail() || protocol != "HTTP/1.1")
+        return false;
+    size_t pos = uri.find('?');
+    if (pos != std::string::npos)
+    {
+        uri = uri.substr(0, pos);
+        if (pos + 1 < uri.size())
+            search = uri.substr(pos + 1);
+    }
+    return true;
+}
+
 Request::Request(const std::string &request)
 : _method(""), _uri(""), _search(""), _headers(), _content_length(0), is_ready(false), _body("")
 {
     const std::size_t pos_header_end = request.find("\r\n\r\n");
     if (pos_header_end == std::string::npos)
         return ;
-        // throw std::runtime_error("missing header end");
-
-    std::string protocol;
-    std::istringstream iss(request);
-    iss >> _method >> _uri >> protocol;
-    // todo: check protocol, throw 400
-
-    size_t pos = _uri.find('?');
-    if (pos != std::string::npos)
-    {
-        _uri = _uri.substr(0, pos);
-        if (pos + 1 < _uri.size())
-            _search = _uri.substr(pos + 1);
-    }
+    // todo 400 & close connection
+    if (!parse_request_line(request, _method, _uri, _search))
+        return;
 
     std::size_t pos_start = request.find("\r\n") + 2; // end of first request line
     std::size_t pos_end;
@@ -54,15 +61,10 @@ Request::Request(const std::string &request)
         // std::cout << "header " << key << ":" << value << std::endl;
     }
     // std::cout << "Request: " << _method << "|" <<  _uri << "|" << protocol << std::endl;
-    //todo: default for missing header[Host], consider ":80" as ""
     if (_headers.count("Content-Length"))
     {
         // todo error handler
         _content_length = std::atoi(_headers["Content-Length"].c_str());
-        // std::cout << "content length " << _content_length
-        //         << "------------------" << std::endl
-        //         << request.substr(pos_header_end + 4, _content_length) << std::endl
-        //         << "=================" << std::endl;
         if (_content_length > request.size() - pos_header_end - 4)
             return; // stop incomplete body for more recv()
         _body = request.substr(pos_header_end + 4, _content_length);
@@ -74,105 +76,45 @@ Request::Request(const std::string &request)
             std::cout << "invalid Transfer-Encoding " << _headers["Transfer-Encoding"] << std::endl;
             return;
         }
-        // std::cout << "xxxxxxxxxxxxxxxxxxxxxxxxxx" << std::endl << request.substr(pos_header_end + 4) << std::endl << "xxxxxxxxxxxxxxxxxxxxxxxxxx" << std::endl;
-        int length = 0;
-        std::string body;
-        bool complete = false;
-        const std::string hex = "0123456789ABCDEF";
-        for (pos = pos_header_end + 4; pos < request.size();)
+        if (request.find("\r\n0\r\n\r\n", request.size() - 7) == std::string::npos)
         {
-            std::size_t v = hex.find(std::toupper(request[pos]));
-            if (v != std::string::npos)
-            {
-                length = length * 16 + v;
-                ++pos;
-            }
-            else
-            {
-                if (request.find("\r\n", pos) != pos)
-                {
-                    std::cout << "invalid chunk size "
-                        << std::endl;
-                        // << length << " pos " << request.find("\r\n", pos) << " vs "  << pos << " ch " << request[pos] << std::endl;
-                    return;
-                }
-                pos += 2;
-                if (length)
-                    body += request.substr(pos, length);
-                pos += length;
-                if (request.find("\r\n", pos) != pos)
-                {
-                    std::cout << "invalid chunk data"
-                        << std::endl;
-                        //  << "=========" << std::endl << body << "=============" << std::endl << body.size() << " len "  << length << std::endl;
-                        // std::cout << "check " << pos << " vs " << request.find("\r\n", pos) << " ch: " << request[pos] << std::endl;
-                    return;
-                }
-                pos += 2;
-                if (length == 0)
-                {
-                    complete = true;
-                    break;
-                }
-                length = 0;
-            }
-        }
-        if (!complete)
-        {
-            std::cout << "incomplete chunked request " << std::endl;
+            // std::cout << "incomplete chunked request " << std::endl;
             return;
         }
-        // std::cout << "chunked request body "
-        //     << "-----------------------" << std::endl 
-        //     << body << std::endl
-        //     << "=====================" << std::endl;
-        // save chunk to file, replace all
+        int chunk_length = 0;
+        const std::string hex = "0123456789ABCDEF";
+        for (std::size_t pos = pos_header_end + 4, val; pos < request.size();)
+        {
+            val = hex.find(std::toupper(request[pos]));
+            if (val != std::string::npos)
+            {
+                chunk_length = chunk_length * 16 + val;
+                ++pos;
+                continue;
+            }
+
+            if (request.find("\r\n", pos) != pos)
+            {
+                std::cout << "invalid chunk size" << std::endl;
+                return;
+            }
+            pos += 2;
+            if (chunk_length)
+                _body += request.substr(pos, chunk_length);
+            pos += chunk_length;
+            if (request.find("\r\n", pos) != pos)
+            {
+                std::cout << "invalid chunk data" << std::endl;
+                return;
+            }
+            pos += 2;
+            if (chunk_length == 0)
+                break;
+            chunk_length = 0;
+        }
+        _content_length = _body.size();
         // std::ofstream ofs("chunked.txt", std::ios::out | std::ios::trunc | std::ios::binary);
         // ofs << body;
-        _body = body;
     }
     is_ready = true;
-}
-
-std::string Request::translate_path(Configuration &configuration) //todo? const t_configs &
-{
-    // assert(!routes.empty());
-    std::string route = _headers["Host"] + _uri; // localhost:8080/dir/index.html
-    // search exact (Host) route
-    while (configuration._routes.count(route) == 0)
-    {
-        std::size_t pos = route.find_last_of('/');
-        if (pos == std::string::npos)
-            break;
-        route = route.substr(0, pos);
-    }
-    // use default route if no route found
-    if (configuration._routes.count(route) == 0)
-    {
-        // redo search route within default routes
-        route = configuration._default_server + _uri;
-        while (configuration._routes.count(route) == 0)
-        {
-            std::size_t pos = route.find_last_of('/');
-            if (pos == std::string::npos)
-                break;
-            route = route.substr(0, pos);
-        }
-    }
-    _script_name = _uri;
-    {
-        std::size_t pos = route.find('/');
-        if (pos != std::string::npos)
-            _script_name = _script_name.substr(route.size() - pos);
-    }
-    _route = &configuration._routes[route];
-    _script_name = configuration._routes[route]["root"] + _script_name;
-    while (_script_name.find("/..") != std::string::npos)
-        _script_name.replace(_script_name.find("/.."), 2, "/");
-    while (_script_name.find("//") != std::string::npos)
-        _script_name.replace(_script_name.find("//"), 2, "/");
-    std::cout << "Request: " << _method << ' ' << _headers["Host"] << _uri
-            << ", location: " << route
-            << ", path " << _script_name << std::endl;
-    return _script_name;
 }

@@ -13,43 +13,14 @@ class Configuration
 {
 public:
     Configuration()
-        : _routes(), _reason_phrase(), _mime_types()
+        : _reason_phrase(), _mime_types()
     {
-        load_routes();
         load_reason_phrases();
         load_mime_types();
     }
-    t_configs _routes;
     std::map<int, const char *> _reason_phrase;
     std::map<std::string, std::string> _mime_types;
-    std::string _default_server;
 private:
-    void load_routes(void)
-    {
-        //route keys by (hostname, port, uri), uri truncated trailing slash
-        //key "host:80" => "host" without port
-        _routes["127.0.0.1:8888"]["root"] = "./wwwroot";
-        _routes["127.0.0.1:8888"]["index"] = "";
-        _routes["127.0.0.1:8888"]["cgi"] = ".sh";
-        _routes["127.0.0.1:8888/localhost8888"]["root"] = "./wwwroot/localhost8888";
-        _routes["127.0.0.1:8888/localhost8888"]["index"] = "index.html";
-
-        _routes["127.0.0.1:8888/production"]["root"] = "./wwwroot/production";
-        _routes["127.0.0.1:8888/production"]["index"] = "index.html";
-        // index
-        _routes["localhost:8888"]["root"] = "./wwwroot/localhost8888";
-        _routes["localhost:8888"]["index"] = "index.html";
-        _routes["localhost:8888/dir"]["root"] = "./wwwroot/.hidden";
-        _routes["localhost:8888/dir"]["index"] = "index.html"; // dir-listing
-        // dir-listing
-        _routes["localhost:9999"]["root"] = "./wwwroot/localhost9999";
-        _routes["localhost:9999"]["index"] = "";
-        _routes["localhost:9999"]["cgi"] = ".sh";
-        _routes["localhost:9999/dir"]["root"] = "./wwwroot/.hidden";
-        _routes["localhost:9999/dir"]["index"] = "";
-
-        _default_server = "127.0.0.1:8888"; // for default routes if no host:port match
-    }
     void load_reason_phrases()
     {
         _reason_phrase[100] = "Continue";

@@ -1,16 +1,14 @@
 #ifndef WEBSERVER_HPP
 #define WEBSERVER_HPP
 
-#define LISTEN_BACKLOG 8
+#define LISTEN_BACKLOG 128
 #define POLL_TIMEOUT_SEC 5
-#define CONNECTION_TIMEOUT_SEC 30
+#define CONNECTION_TIMEOUT_SEC 300
 
 #include "Configuration.hpp"
 #include "Middleware.hpp"
 #include "Connection.hpp"
 #include "Server.hpp"
-#include <list>
-#include <map>
 
 // todo tele netstat established and connections count
 // todo check netstat browser TIME_WAIT
@@ -22,18 +20,20 @@ public:
     void loop(void);
 
 private:
+    typedef std::list<int> t_listen_sockets;
+    
     static Webserver *_instance;
-    typedef std::list<Connection> t_connections;
-    typedef std::map<int, int> t_listen_port_fd;
 
     Configuration _configuration;
     Pipeline _pipeline;
-    std::vector<Server *> _serverConfigs;
+    std::vector<Server> _serverConfigs;
 
-    int _create_listen_socket(int port);
-    void _loop_sockets(t_listen_port_fd);
+    int _create_listen_socket(const char *address, int port);
+    void _loop_sockets(t_listen_sockets &);
     void _process_request(Connection &connection);
     static void _on_cgi_exit(int signal);
+    void find_config(Request &request);
+
 };
 
 #endif

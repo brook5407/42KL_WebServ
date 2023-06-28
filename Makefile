@@ -1,12 +1,14 @@
 NAME		:= webserv
 OBJFILES	:= webserv.o Connection.o \
 				Webserver.o Request.o Response.o CGI.o \
-				server.o location.o ConfigParser.o
+				Server.o Location.o ConfigParser.o
 DEPFILES	:= $(OBJFILES:.o=.d)
 ASAN		:= -fsanitize=address
-CXXFLAGS	:= -Wall -Wextra -Werror -Wshadow -std=c++98 -MMD $(ASAN) -g -Isrc -I.
+CXXFLAGS	:= -Wall -Wextra -Werror -Wshadow -std=c++98 -MMD $(ASAN) -Isrc -Isrcs 
+CXXFLAGS  	+= -O3 -flto
+# CXXFLAGS  	+= -g3
 LDLIBS		:= -lstdc++ $(ASAN)
-VPATH		:= src
+VPATH		:= src srcs
 
 # for Kishyan wsl without g++
 ifeq ($(shell which g++), )
@@ -42,3 +44,38 @@ test: $(NAME)
 	@echo PONG | nc localhost $(PORT)
 	@printf "" | nc localhost $(PORT)
 	@# pkill $(NAME)
+
+test_dir:
+	mkdir YoupiBanane
+	echo z > YoupiBanane/youpi.bad_extension 
+	touch YoupiBanane/youpi.bla
+	mkdir YoupiBanane/nop
+	touch YoupiBanane/nop/youpi.bad_extension YoupiBanane/nop/other.pouic
+	mkdir YoupiBanane/Yeah
+	echo x > YoupiBanane/Yeah/not_happy.bad_extension
+
+test_conf:
+	echo "\
+server {\n\
+    listen 0.0.0.0:8080;\n\
+    server_name localhost;\n\
+    client_max_body_size 100m;\n\
+    location / {\n\
+        root ./YoupiBanane;\n\
+        index youpi.bad_extension;\n\
+        methods GET;\n\
+    }\n\
+    location /put_test {\n\
+        root ./YoupiBanane;\n\
+        methods PUT;\n\
+    }\n\
+    location /post_body {\n\
+        root ./YoupiBanane;\n\
+        methods POST;\n\
+    }\n\
+    location /directory {\n\
+        root ./YoupiBanane;\n\
+        index youpi.bad_extension;\n\
+        methods GET;\n\
+    }\n\
+}" > YoupiBanane.conf

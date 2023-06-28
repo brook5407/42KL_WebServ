@@ -3,6 +3,7 @@
 
 #include "Request.hpp"
 #include "Response.hpp"
+#include "HttpException.hpp"
 
 #include <list>
 #include <string>
@@ -10,19 +11,6 @@
 #include <iostream>
 #include <dirent.h>
 #include "CGI.hpp"
-
-#ifndef DT_DIR
-# define DT_DIR  4
-# define DT_REG  8
-#endif
-
-template <typename T>
-std::string to_string(T value)
-{
-    std::ostringstream os;
-    os << value;
-    return os.str();
-}
 
 template <typename T>
 struct Singleton
@@ -32,25 +20,6 @@ struct Singleton
         static T instance;
         return &instance;
     }
-};
-
-class HttpException: public std::exception
-{
-    public:
-        HttpException(int status_code, const std::string &message)
-            : _message(message), _status_code(status_code) {}
-        virtual ~HttpException() throw() {}
-        virtual const char *what() const throw()
-        {
-            return _message.c_str();
-        }
-        int status_code() const throw()
-        {
-            return _status_code;
-        }
-    private:
-        std::string _message;
-        int _status_code;
 };
 
 //abstract class
@@ -76,32 +45,54 @@ class Middleware
             return _next;
         }
 
+    protected:
+        Middleware *_next;
+
         // add check file function here
-        bool	file_exists(std::string &route)
+        bool	file_exists(std::string &filepath)
         {
-	        std::ifstream	file(route.c_str());
+	        std::ifstream	file(filepath.c_str());
 	        return file.good();
         }
 
-        bool   file_executable(std::string &route)
+        bool   file_executable(std::string &filepath)
         {
-            return (access(route.c_str(), X_OK) == 0);
+            return (access(filepath.c_str(), X_OK) == 0);
         }
 
-    protected:
-        Middleware *_next;
+        bool    file_extension(std::string &filepath, const std::string extension)
+        {
+            return (filepath.size() > extension.size()
+                && filepath.find(extension, filepath.size() - extension.size()) != std::string::npos);
+            // return (filepath.substr(filepath.find_last_of('.')) == extension);
+        }
+
+        template <typename T>
+        std::string to_string(T value)
+        {
+            std::ostringstream os;
+            os << value;
+            return os.str();
+        }
+
 };
 
 class CheckMethod : public Middleware
 {
     public:
-        // todo: get allowed method by route
         void execute(Request &req, Response &res)
         {
-            if (req._method != "GET" && req._method != "POST"
-                    && req._method != "DELETE" && req._method != "PUT")
-                throw HttpException(405, "Method Not Allowed");
-            Middleware::execute(req, res);
+            // not supported method
+            if (req._method == "HEAD")
+            {
+                res.send_content(405, std::string());
+                return;
+            }
+            if (req._location_config->getMethods().empty())
+                std::cout << "empty method" << std::endl;
+            if (req._location_config->getMethods().count(req._method))
+                return Middleware::execute(req, res);
+            throw HttpException(405, "Method Not Allowed");
         }
 };
 
@@ -110,8 +101,9 @@ class IndexFile : public Middleware
     public:
         void execute(Request &req, Response &res)
         {
-            if ((*req._route)["index"].size())
+            for (std::size_t i = 0; i < req._location_config->getIndex().size(); ++i)
             {
+                const std::string& filename = req._location_config->getIndex()[i];
                 DIR *dir = opendir(req._script_name.c_str());
                 if (dir)
                 {
@@ -120,7 +112,7 @@ class IndexFile : public Middleware
                     std::string index_file = req._script_name;
                     if (req._script_name[req._script_name.size() - 1] != '/')
                         index_file += "/";
-                    index_file += (*req._route)["index"];
+                    index_file += filename;
                     std::ifstream infile(index_file.c_str());
                     if (infile.is_open())
                         req._script_name = index_file;
@@ -139,13 +131,15 @@ class DirectoryListing: public Middleware
             DIR *dir;
             struct dirent *entry;
 
+            if (req._location_config->checkAutoIndex() == false)
+                return Middleware::execute(req, res);
             dir = opendir(req._script_name.c_str());
             if (dir == NULL)
                 return Middleware::execute(req, res);
-
-            res.write("<html><body>");
-            res.write("<h1>Directory listing</h1>");
-            res.write("<ol>");
+            std::stringstream ss;
+            ss << "<html><body>";
+            ss << "<h1>Directory listing</h1>";
+            ss << "<ol>";
 
             while ((entry = readdir(dir)) != NULL)
             {
@@ -154,23 +148,24 @@ class DirectoryListing: public Middleware
                     continue;
                 if (entry->d_type != DT_DIR && entry->d_type != DT_REG)
                     continue;
-                res.write(std::string() + "<li><a href=\"" + req._uri);
+                ss << std::string() + "<li><a href=\"" + req._uri;
                 // add directory slash if not present
                 if (req._uri[req._uri.size() - 1] != '/')
-                    res.write("/");
-                res.write(std::string() + entry->d_name);
+                    ss << "/";
+                ss << std::string() + entry->d_name;
                 // append slash to directory
                 if (entry->d_type == DT_DIR)
-                    res.write("/");
-                res.write(std::string() + "\">" + entry->d_name);
+                    ss << "/";
+                ss << std::string() + "\">" + entry->d_name;
                 if (entry->d_type == DT_DIR)
-                    res.write("/");
-                res.write("</a></li>");
+                    ss << "/";
+                ss << "</a></li>";
             }
 
             closedir(dir);
-            res.write("</ol>");
-            res.write("</html></body>");
+            ss << "</ol>";
+            ss << "</html></body>";
+            res.send_content(200, ss.str());
         }
 };
 
@@ -179,10 +174,11 @@ class Redirect: public Middleware
     public:
         void execute(Request &req, Response &res)
         {
-            if (false)
+            if (req._location_config->getRedirection().first)
             {
-                res.status(301);
-                res.header("Location", "http://www.google.com");
+                res.send_location(
+                    req._location_config->getRedirection().first,
+                    req._location_config->getRedirection().second);
             }
             else
                 Middleware::execute(req, res);
@@ -197,7 +193,7 @@ class StaticFile: public Middleware
         {
             struct stat sb;
             if (stat(req._script_name.c_str(), &sb) == 0 && S_ISREG(sb.st_mode))
-                res.send_file(req._script_name);
+                res.send_file(200, req._script_name);
             else
                 throw HttpException(404, "Not found");
         }
@@ -218,10 +214,12 @@ class ErrorPage: public Middleware
                 std::cout << "HTTP exception: " << e.what() << std::endl;
                 std::string error_page = "./error_pages/" + to_string(e.status_code()) + ".html";
                 std::cout << "error page: " << error_page << " for " << req._uri << std::endl;
-                res.send_file(error_page);
+                res.send_file(e.status_code(), error_page);
             }
         }
 };
+
+extern char **environ;
 
 class CgiRunner: public Middleware
 {
@@ -230,33 +228,46 @@ class CgiRunner: public Middleware
         bool    is_CGI;
         void execute(Request &req, Response &res)
         {
-            if (req._route->find("cgi") != req._route->end())
+            is_CGI = false;
+            for (std::size_t i = 0; i < req._location_config->checkCgiExtension().size(); ++i)
             {
-                is_CGI = false;
-                const std::string extension = (*req._route)["cgi"];
-                if (req._script_name.size() > extension.size())
+                const std::string &extension = req._location_config->checkCgiExtension()[i];
+                if (file_extension(req._script_name, extension))
                 {
-                    if (req._script_name.find(extension, req._script_name.size() - extension.size())
-                            != std::string::npos)
+                    if (!file_exists(req._script_name))
+                        throw HttpException(404, "File not found");
+                    if (!file_executable(req._script_name))
+                        throw HttpException(403, "File is not executable");
+
+                    is_CGI = true;
+                    _CGI.push_back(CGI(res));
+                    CGI &cgi = _CGI.back();
+                    // char **envp = environ;
+                    // while (*envp)
+                    //     cgi.add_envp(*envp++);
+                    cgi.add_envp("REQUEST_METHOD", req._method);
+                    cgi.add_envp("SERVER_PROTOCOL", "HTTP/1.1");
+                    cgi.add_envp("PATH_INFO", req._uri);
+
+                    // cgi.add_envp("CONTENT_LENGTH", to_string(req._content_length));
+                    // cgi.add_envp("CONTENT_TYPE", req._headers["Content-Type"]);
+                    // cgi.add_envp("GATEWAY_INTERFACE", "CGI/1.1");
+                    // cgi.add_envp("PATH_INFO", req._uri);
+                    // cgi.add_envp("PATH_TRANSLATED", req._script_name);
+                    // cgi.add_envp("REQUESTED_URI", req._uri);
+                    // cgi.add_envp("REMOTE_ADDR", res._connection._client_ip);
+                    // cgi.add_envp("SCRIPT_NAME", req._script_name);
+                    // cgi.add_envp("SERVER_SOFTWARE", "webserv");
+                    // cgi.add_envp("SERVER_PORT", to_string(res._connection._server_port));
+
+                    for (std::map<std::string, std::string>::iterator it = req._headers.begin();
+                            it != req._headers.end(); ++it)
                     {
-                        if (!file_exists(req._script_name))
-                            throw HttpException(404, "File not found");
-                        if (!file_executable(req._script_name))
-                            throw HttpException(403, "File is not executable");
-                        is_CGI = true;
-                        _CGI.push_back(CGI(res));
-                        CGI &cgi = _CGI.back();
-                        cgi.setup_bash(req._script_name);
-                        // if (cgi.is_exit(30) && true)
-                        // {
-                        //     std::cout << "cgi output: " << cgi.output << std::endl;
-                        //     res.write(cgi.output);
-                        // }
-                        // else
-                        //     throw HttpException(500, "Internal Server Error");
-                        // fork and exec cgi
-                        return;
+                        if (it->first.find("X-") == 0)
+                            cgi.add_envp("HTTP_" + it->first, it->second);
                     }
+                    cgi.setup_bash("ubuntu_cgi_tester", req._script_name, req._body);
+                    return;
                 }
             }
             Middleware::execute(req, res);
@@ -292,8 +303,11 @@ class UploadDelete: public Middleware
                     filename = req._script_name + "/" + filename; // prefix document root
                 else
                     filename = req._script_name;
+                // todo separate middleware
+                if (req._body.size() > 100 && filename.find("post_body") != std::string::npos)  
+                    throw HttpException(413, "Request Entity Too Large");
                 save_file(filename, req._body);
-                res.write(filename.substr(filename.find_last_of('/') + 1) + " has been uploaded!");
+                res.send_content(200, filename.substr(filename.find_last_of('/') + 1) + " has been uploaded!");
             }
             else if (req._method == "DELETE")
             {
@@ -318,8 +332,8 @@ class UploadDelete: public Middleware
         {
             if (filename.empty())
                     throw HttpException(400, "Bad Request: no filename");
-            if (content.empty())
-                throw HttpException(400, "Bad Request: no content");
+            // if (content.empty())
+            //     throw HttpException(400, "Bad Request: no content");
             std::ofstream ofs(filename.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
             if (ofs.fail())
                 throw HttpException(500, "Internal Server Error: fail to open file");
@@ -343,6 +357,8 @@ class Pipeline : public Middleware
             add(Singleton<DirectoryListing>::get_instance()); //GET
             add(Singleton<StaticFile>::get_instance()); //GET
         };
+
+    private:
         void add(Middleware *middleware)
         {
             Middleware *walk = this;
