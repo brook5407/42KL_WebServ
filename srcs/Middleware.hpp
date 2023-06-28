@@ -345,6 +345,18 @@ class UploadDelete: public Middleware
         }
 };
 
+class KeepAliveHandler: public Middleware
+{
+    public:
+        void execute(Request &req, Response &res)
+        {
+            res.set_keep_alive(
+                !req._headers.count("Connection")
+                || req._headers["Connection"] != "close");
+            Middleware::execute(req, res);
+        }
+};
+
 class Pipeline : public Middleware
 {
     public:
@@ -353,6 +365,7 @@ class Pipeline : public Middleware
             add(Singleton<ErrorPage>::get_instance());
             add(Singleton<Logger>::get_instance());
             // add(Singleton<Session>::get_instance());
+            add(Singleton<KeepAliveHandler>::get_instance());
             add(Singleton<CheckMethod>::get_instance());
             add(Singleton<Redirect>::get_instance());
             add(Singleton<IndexFile>::get_instance()); // all methods

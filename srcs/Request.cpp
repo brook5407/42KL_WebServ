@@ -33,7 +33,7 @@ Request::Request(const std::string &request)
     std::size_t pos_start = request.find("\r\n") + 2; // end of first request line
     std::size_t pos_end;
     std::string key, value;
-    while ((pos_end = request.find("\r\n", pos_start)) < pos_header_end)
+    while ((pos_end = request.find("\r\n", pos_start)) <= pos_header_end)
     {
         std::size_t pos_key_end = request.find(": ", pos_start);
         // key not found

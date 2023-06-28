@@ -22,6 +22,7 @@ class Response
         void send_content(int status_code, const std::string &data, const std::string &type = "text/html");
         void send_file(int status_code, const std::string &filepath);
         void send_cgi_fd(int fd);
+        void set_keep_alive(bool keep_alive);
 
         Connection &_connection;
     private:

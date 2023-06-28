@@ -94,9 +94,18 @@ void Response::send_cgi_fd(int fd)
     // std::cout << "send fd " << _fd << " sz:" << fsize << std::endl;
 }
 
+void Response::set_keep_alive(bool keep_alive)
+{
+    _connection.set_keep_alive(keep_alive);
+}
+
 void Response::add_header(std::stringstream &ss, int status_code)
 {
     ss << "HTTP/1.1 " << status_code << ' ' << _configuration._reason_phrase[status_code] << "\r\n";
+    if (_connection.keep_alive())
+        ss << "Connection: keep-alive\r\n";
+    else
+        ss << "Connection: close\r\n";
     // for (std::map<std::string, std::string>::iterator it = _headers.begin(); it != _headers.end(); ++it)
     //     ss << it->first << ": " << it->second << "\r\n";
 }

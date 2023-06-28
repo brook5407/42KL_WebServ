@@ -14,7 +14,7 @@ class Connection
     public:
         Connection() :
             _in_buffer(),  _ifile(), _server_port(), _in_fd(-1), _out_buffer(), _fd(0),
-            _status(READING), _last_activity(time(NULL))
+            _status(READING), _last_activity(time(NULL)), _keep_alive(true)
             {}
         Connection(const Connection &other)
             : _in_buffer(),  _ifile(), 
@@ -24,13 +24,14 @@ class Connection
             _client_ip(other._client_ip),
             _in_fd(other._in_fd),
             _out_buffer(),_fd(other._fd), 
-            _status(other._status), _last_activity(other._last_activity)
+            _status(other._status), _last_activity(other._last_activity),
+            _keep_alive(other._keep_alive)
             {
 
             } 
         Connection(int fd)
             : _in_buffer(), _ifile(), _in_fd(-1), _out_buffer(), _fd(fd), _status(READING),
-            _last_activity(time(NULL))
+            _last_activity(time(NULL)), _keep_alive(true)
             {
                 get_details(fd);
             }
@@ -48,6 +49,8 @@ class Connection
         void read();
         enum CONNECTION_STATUS status() const { return _status; }
     	friend std::ostream& operator<<(std::ostream& os, const Connection& connection);
+        void set_keep_alive(bool keep_alive) { _keep_alive = keep_alive; }
+        bool keep_alive() const { return _keep_alive; }
 
         std::string _in_buffer;
         std::ifstream _ifile;
@@ -58,7 +61,7 @@ class Connection
         int _in_fd;
     private:
         void get_details(int connection_socket);
-        void show_duration(void);
+        void on_send_complete(void);
         void _close();
         void transmit_file();
 
@@ -67,6 +70,7 @@ class Connection
         enum CONNECTION_STATUS _status;
         time_t _last_activity;
         unsigned long _start_time;
+        bool _keep_alive;
 };
 
 #endif

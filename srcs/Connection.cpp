@@ -85,10 +85,7 @@ void Connection::transmit()
 
         //stop sending when buffer sent and no file to send
         if (_out_buffer.empty() && !_ifile.is_open() && _in_fd == -1)
-        {
-            _status = READING;
-            show_duration();
-        }
+            on_send_complete();
     }
     else
     {
@@ -110,8 +107,7 @@ void Connection::transmit_file()
         {
             close(_in_fd);
             _in_fd = -1;
-            show_duration();
-            _status = READING; // reuse connection for next request
+            on_send_complete();
             return;
         }
         int sent = send(_fd, _buffer, sz_read, 0);
@@ -147,21 +143,23 @@ void Connection::transmit_file()
         if (_ifile.eof()) //not else-if
         {
             _ifile.close();
-            show_duration();
-            _status = READING; // reuse connection for next request
+            on_send_complete();
         }
     }
     else
     {
-        show_duration();
-        _status = READING; //reuse connection for next request
+        on_send_complete();
     }
 }
 
-void Connection::show_duration()
+void Connection::on_send_complete()
 {
     static size_t total = 0;
     std::cout << "Request #" << ++total << " duration: " << format_nanosecond(get_nanosecond() - _start_time) << std::endl;
+    if (_keep_alive)
+        _status = READING;
+    else
+        _close();
 }
 
 void Connection::except()
@@ -173,6 +171,7 @@ void Connection::_close()
 {
     if (_fd > 0)
     {
+        // shutdown(_fd, SHUT_RDWR);
         close(_fd);
         _fd = -1;
         _status = CLOSED;
