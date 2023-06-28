@@ -4,11 +4,11 @@ OBJFILES	:= webserv.o Connection.o \
 				Server.o Location.o ConfigParser.o
 DEPFILES	:= $(OBJFILES:.o=.d)
 ASAN		:= -fsanitize=address
-CXXFLAGS	:= -Wall -Wextra -Werror -Wshadow -std=c++98 -MMD $(ASAN) -Isrc -Isrcs 
+CXXFLAGS	:= -Wall -Wextra -Werror -Wshadow -std=c++98 -MMD $(ASAN) -Isrcs 
 CXXFLAGS  	+= -O3 -flto
 # CXXFLAGS  	+= -g3
 LDLIBS		:= -lstdc++ $(ASAN)
-VPATH		:= src srcs
+VPATH		:= srcs
 
 # for Kishyan wsl without g++
 ifeq ($(shell which g++), )
