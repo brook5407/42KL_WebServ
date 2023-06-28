@@ -78,7 +78,7 @@ void Response::send_cgi_fd(int fd)
         std::cout << "read failed" << std::endl;
         return;
     }
-    char *it = std::search(header, header + read_size, "\r\n\r\n", "\r\n\r\n" + 4);
+    char *it = std::search(header, header + read_size, "\r\n\r\n", (const char *)("\r\n\r\n") + 4);
     if (it == header + read_size)
     {
         std::cout << "header not found" << std::endl;

@@ -98,6 +98,8 @@ void Webserver::find_config(Request &request)
 
 void Webserver::_process_request(Connection &connection)
 {
+    #if __APPLE__ && __MACH__
+    #else
     if (connection._in_buffer.find("GET / ") == 0 && connection.status() == READING
         && connection._in_buffer.find("\r\n\r\n", connection._in_buffer.size()-4) != std::string::npos
         && connection._in_buffer.find("Go-http-client") != std::string::npos)
@@ -105,6 +107,7 @@ void Webserver::_process_request(Connection &connection)
         Response(connection, _configuration).send_content(200, "OK");
         return;
     }
+    #endif
     Request request(connection._in_buffer); // parser
     if (!request.is_ready)
         return;

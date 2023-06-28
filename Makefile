@@ -33,7 +33,7 @@ re: fclean all
 $(NAME): $(OBJFILES)
 
 PORT := 8888
-test: $(NAME)
+testx: $(NAME)
 	./$(NAME) $(PORT)&
 	@sleep 1
 	curl localhost:$(PORT)
@@ -45,13 +45,24 @@ test: $(NAME)
 	@printf "" | nc localhost $(PORT)
 	@# pkill $(NAME)
 
+test: $(NAME) tester test_dir test_conf
+	./$(NAME) YoupiBanane.conf 2>&1 > webserv.log &
+	./tester http://localhost:8080 || ./ubuntu_tester http://localhost:8080
+
+tester:
+	curl -LO https://cdn.intra.42.fr/document/document/17624/tester
+	curl -LO https://cdn.intra.42.fr/document/document/17625/ubuntu_cgi_tester
+	curl -LO https://cdn.intra.42.fr/document/document/17626/cgi_tester
+	curl -LO https://cdn.intra.42.fr/document/document/17627/ubuntu_tester
+	chmod +x tester ubuntu_cgi_tester cgi_tester ubuntu_tester
+
 test_dir:
-	mkdir YoupiBanane
+	mkdir -p YoupiBanane
 	echo z > YoupiBanane/youpi.bad_extension 
 	touch YoupiBanane/youpi.bla
-	mkdir YoupiBanane/nop
+	mkdir -p YoupiBanane/nop
 	touch YoupiBanane/nop/youpi.bad_extension YoupiBanane/nop/other.pouic
-	mkdir YoupiBanane/Yeah
+	mkdir -p YoupiBanane/Yeah
 	echo x > YoupiBanane/Yeah/not_happy.bad_extension
 
 test_conf:
@@ -70,12 +81,14 @@ server {\n\
         methods PUT;\n\
     }\n\
     location /post_body {\n\
-        root ./YoupiBanane;\n\
+        root ./YoupiBanane/post_body;\n\
         methods POST;\n\
     }\n\
     location /directory {\n\
         root ./YoupiBanane;\n\
         index youpi.bad_extension;\n\
-        methods GET;\n\
+        autoindex off;\n\
+        cgi_extensions .bla;\n\
+        methods GET POST;\n\
     }\n\
 }" > YoupiBanane.conf

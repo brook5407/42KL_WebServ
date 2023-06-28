@@ -234,10 +234,10 @@ class CgiRunner: public Middleware
                 const std::string &extension = req._location_config->checkCgiExtension()[i];
                 if (file_extension(req._script_name, extension))
                 {
-                    if (!file_exists(req._script_name))
-                        throw HttpException(404, "File not found");
-                    if (!file_executable(req._script_name))
-                        throw HttpException(403, "File is not executable");
+                    // if (!file_exists(req._script_name))
+                    //     throw HttpException(404, "File not found");
+                    // if (!file_executable(req._script_name))
+                    //     throw HttpException(403, "File is not executable");
 
                     is_CGI = true;
                     _CGI.push_back(CGI(res));
@@ -266,7 +266,11 @@ class CgiRunner: public Middleware
                         if (it->first.find("X-") == 0)
                             cgi.add_envp("HTTP_" + it->first, it->second);
                     }
+                    #if __APPLE__ && __MACH__
+                    cgi.setup_bash("cgi_tester", req._script_name, req._body);
+                    #else
                     cgi.setup_bash("ubuntu_cgi_tester", req._script_name, req._body);
+                    #endif
                     return;
                 }
             }
