@@ -3,7 +3,7 @@ OBJFILES	:= webserv.o Connection.o \
 				Webserver.o Request.o Response.o CGI.o \
 				Server.o Location.o ConfigParser.o
 DEPFILES	:= $(OBJFILES:.o=.d)
-ASAN		:= -fsanitize=address
+# ASAN		:= -fsanitize=address
 CXXFLAGS	:= -Wall -Wextra -Werror -Wshadow -std=c++98 -MMD $(ASAN) -Isrcs 
 CXXFLAGS  	+= -O3 -flto
 # CXXFLAGS  	+= -g3
@@ -46,8 +46,9 @@ testx: $(NAME)
 	@# pkill $(NAME)
 
 test: $(NAME) tester test_dir test_conf
+	- killall $(NAME)
 	./$(NAME) YoupiBanane.conf 2>&1 > webserv.log &
-	./tester http://localhost:8080 || ./ubuntu_tester http://localhost:8080
+	time ./tester http://localhost:8080 || time ./ubuntu_tester http://localhost:8080
 
 tester:
 	curl -LO https://cdn.intra.42.fr/document/document/17624/tester
