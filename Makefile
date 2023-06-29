@@ -9,6 +9,7 @@ CXXFLAGS  	+= -O3 -flto
 # CXXFLAGS  	+= -g3
 LDLIBS		:= -lstdc++ $(ASAN)
 VPATH		:= srcs
+PORT		:= 8080
 
 # for Kishyan wsl without g++
 ifeq ($(shell which g++), )
@@ -32,7 +33,6 @@ re: fclean all
 
 $(NAME): $(OBJFILES)
 
-PORT := 8888
 testx: $(NAME)
 	./$(NAME) $(PORT)&
 	@sleep 1
@@ -48,7 +48,7 @@ testx: $(NAME)
 test: $(NAME) tester test_dir test_conf
 	- pkill $(NAME)
 	./$(NAME) YoupiBanane.conf 2>&1 > webserv.log &
-	time ./tester http://localhost:8080 || time ./ubuntu_tester http://localhost:8080 || ./ubuntu_tester http://localhost:8080
+	time ./tester http://localhost:$(PORT) || time ./ubuntu_tester http://localhost:$(PORT) || ./ubuntu_tester http://localhost:$(PORT)
 
 tester:
 	curl -LO https://cdn.intra.42.fr/document/document/17624/tester
@@ -69,7 +69,7 @@ test_dir:
 test_conf:
 	echo "\
 server {\n\
-    listen 0.0.0.0:8080;\n\
+    listen 0.0.0.0:$(PORT);\n\
     server_name localhost;\n\
     client_max_body_size 100m;\n\
     location / {\n\
