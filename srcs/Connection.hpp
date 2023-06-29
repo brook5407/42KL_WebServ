@@ -6,7 +6,7 @@
 #include <fstream>
 #include <iostream>
 
-#define BUFFER_SIZE 100 * 1024 * 1024
+#define BUFFER_SIZE 1 * 1024 * 1024
 enum CONNECTION_STATUS {READING, SENDING, CLOSED};
 
 class Connection
