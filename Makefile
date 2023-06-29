@@ -46,9 +46,9 @@ testx: $(NAME)
 	@# pkill $(NAME)
 
 test: $(NAME) tester test_dir test_conf
-	- killall $(NAME)
+	- pkill $(NAME)
 	./$(NAME) YoupiBanane.conf 2>&1 > webserv.log &
-	time ./tester http://localhost:8080 || time ./ubuntu_tester http://localhost:8080
+	time ./tester http://localhost:8080 || time ./ubuntu_tester http://localhost:8080 || ./ubuntu_tester http://localhost:8080
 
 tester:
 	curl -LO https://cdn.intra.42.fr/document/document/17624/tester
