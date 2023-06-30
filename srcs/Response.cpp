@@ -47,8 +47,7 @@ void Response::send_file(int status_code, const std::string &filepath)
         char timeBuffer[100];
         strftime(timeBuffer, sizeof(timeBuffer), "%a, %d %b %Y %H:%M:%S GMT", gmtime(&modifiedTime));
         ss << "Content-Length: " << fileStat.st_size << "\r\n";
-        // todo enable below after testing
-        // ss << "Last-Modified: " << timeBuffer << "\r\n";
+        ss << "Last-Modified: " << timeBuffer << "\r\n"; // for caching
     }
 
     {
