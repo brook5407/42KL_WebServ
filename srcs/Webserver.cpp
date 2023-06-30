@@ -1,5 +1,7 @@
 #include "Webserver.hpp"
 #include "ConfigParser.hpp"
+#include "CGIHandler.hpp"
+#include "Singleton.hpp"
 
 #include <unistd.h>
 #include <signal.h>
@@ -98,16 +100,15 @@ void Webserver::find_config(Request &request)
 
 void Webserver::_process_request(Connection &connection)
 {
-    #if __APPLE__ && __MACH__
-    #else
-    if (connection._in_buffer.find("GET / ") == 0 && connection.status() == READING
-        && connection._in_buffer.find("\r\n\r\n", connection._in_buffer.size()-4) != std::string::npos
-        && connection._in_buffer.find("Go-http-client") != std::string::npos)
-    {
-        Response(connection, _configuration).send_content(200, "OK");
-        return;
-    }
-    #endif
+    // #if !__APPLE__ || !__MACH__
+    // if (connection._in_buffer.find("GET / ") == 0 && connection.status() == READING
+    //     && connection._in_buffer.find("\r\n\r\n", connection._in_buffer.size()-4) != std::string::npos
+    //     && connection._in_buffer.find("Go-http-client") != std::string::npos)
+    // {
+    //     Response(connection, _configuration).send_content(200, "OK");
+    //     return;
+    // }
+    // #endif
     Request request(connection._in_buffer); // parser
     if (!request.is_ready)
         return;
@@ -149,13 +150,14 @@ void Webserver::_loop_sockets(t_listen_sockets &listen_sockets)
         // just set response to 502
         // select blocks, this function is read only after select times out
         // for convenience is_timeout and select timeout should be the same
-        for (std::list<CGI>::iterator it = Singleton<CgiRunner>::get_instance()->_CGI.begin(); it != Singleton<CgiRunner>::get_instance()->_CGI.end();)
+        for (std::list<CGI>::iterator it = Singleton<CGIHandler>::get_instance()->_CGI.begin();
+            it != Singleton<CGIHandler>::get_instance()->_CGI.end();)
         {
             if (it->is_timeout(300))
             {
                 it->_response.send_content(502, "Process has timed out");
                 kill(it->child_pid, SIGKILL);
-                it = Singleton<CgiRunner>::get_instance()->_CGI.erase(it);
+                it = Singleton<CGIHandler>::get_instance()->_CGI.erase(it);
             }
             else
                 ++it;
@@ -262,7 +264,7 @@ void Webserver::_on_cgi_exit(int)
     {
         std::cout << "Server exited" << std::endl;
     }
-    CgiRunner  &runner = *(Singleton<CgiRunner>::get_instance());
+    CGIHandler  &runner = *(Singleton<CGIHandler>::get_instance());
     std::list<CGI>::iterator it;
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
     {

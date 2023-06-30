@@ -6,9 +6,10 @@
 #define CONNECTION_TIMEOUT_SEC 300
 
 #include "Configuration.hpp"
-#include "Middleware.hpp"
+#include "Pipeline.hpp"
 #include "Connection.hpp"
 #include "Server.hpp"
+#include <list>
 
 // todo tele netstat established and connections count
 // todo check netstat browser TIME_WAIT
