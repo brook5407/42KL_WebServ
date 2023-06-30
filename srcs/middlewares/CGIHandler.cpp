@@ -38,14 +38,23 @@ void CGIHandler::execute(Request &req, Response &res)
             for (std::map<std::string, std::string>::iterator it = req._headers.begin();
                     it != req._headers.end(); ++it)
             {
-                if (it->first.find("X-") == 0)
+                if (it->first.find("X-") == 0 || it->first.find("Cookie") == 0)
                     cgi.add_envp("HTTP_" + it->first, it->second);
             }
-            #if __APPLE__ && __MACH__
-            cgi.setup_bash("cgi_tester", req._script_name, req._body);
-            #else
-            cgi.setup_bash("ubuntu_cgi_tester", req._script_name, req._body);
-            #endif
+            if (extension == ".bla")
+            {
+                #if __APPLE__ && __MACH__
+                cgi.setup_bash("cgi_tester", req._script_name, req._body);
+                #else
+                cgi.setup_bash("ubuntu_cgi_tester", req._script_name, req._body);
+                #endif
+            }
+            else if (extension == ".py")
+                cgi.setup_bash("/usr/local/bin/python3", req._script_name, req._body);
+            else if (extension == ".sh")
+                cgi.setup_bash("/bin/bash", req._script_name, req._body);
+            else
+                cgi.setup_bash(req._script_name, req._script_name, req._body);
             return;
         }
     }

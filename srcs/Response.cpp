@@ -78,16 +78,23 @@ void Response::send_cgi_fd(int fd)
         std::cout << "read failed" << std::endl;
         return;
     }
+    size_t header_size = 0;
     char *it = std::search(header, header + read_size, "\r\n\r\n", (const char *)("\r\n\r\n") + 4);
-    if (it == header + read_size)
+    if (it < header + read_size)
     {
-        std::cout << "header not found" << std::endl;
-        return;
+        header_size = it - header + 4;
     }
-    size_t header_size = it - header + 4;
+    else
+    {
+        it = std::search(header, header + read_size, "\n\n", (const char *)("\n\n") + 2);
+        if (it < header + read_size)
+            header_size = it - header + 2;
+    }
     std::stringstream ss;
     add_header(ss, 200); // todo status from stdout
     ss << "Content-Length: " << fsize - header_size << "\r\n";
+    if (header_size == 0)
+        ss << "\r\n";
     lseek(fd, 0, SEEK_SET);
     _connection._in_fd = fd;
     end(ss);
