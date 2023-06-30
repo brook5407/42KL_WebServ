@@ -13,9 +13,9 @@ static bool parse_request_line(
     size_t pos = uri.find('?');
     if (pos != std::string::npos)
     {
-        uri = uri.substr(0, pos);
         if (pos + 1 < uri.size())
             search = uri.substr(pos + 1);
+        uri = uri.substr(0, pos);
     }
     return true;
 }

@@ -60,7 +60,7 @@ class Middleware
             return (access(filepath.c_str(), X_OK) == 0);
         }
 
-        bool    file_extension(std::string &filepath, const std::string extension)
+        bool    file_extension(const std::string &filepath, const std::string &extension)
         {
             return (filepath.size() > extension.size()
                 && filepath.find(extension, filepath.size() - extension.size()) != std::string::npos);
@@ -248,6 +248,7 @@ class CgiRunner: public Middleware
                     cgi.add_envp("REQUEST_METHOD", req._method);
                     cgi.add_envp("SERVER_PROTOCOL", "HTTP/1.1");
                     cgi.add_envp("PATH_INFO", req._uri);
+                    cgi.add_envp("QUERY_STRING", req._search);
 
                     // cgi.add_envp("CONTENT_LENGTH", to_string(req._content_length));
                     // cgi.add_envp("CONTENT_TYPE", req._headers["Content-Type"]);
