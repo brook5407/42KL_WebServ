@@ -217,17 +217,17 @@ Location ConfigParser::parseLocation(conf_t &line_pos, conf_t end)
 
 void ConfigParser::checkServer()
 {
-    std::vector<Server>::iterator it1;
-    std::vector<Server>::iterator it2;
-    
-    for (it1 = _servers.begin(); it1 != _servers.end(); it1++)
-    {
-        for (it2 = _servers.begin(); it2 != _servers.end(); it2++)
-        {
-            if (it1 != it2 && (*it1).getHost() == (*it2).getHost() && (*it1).getPort() == (*it2).getPort())
-                throw std::invalid_argument("Error: two servers cannot have the same ip and port");
-        }
-    }
+    // std::vector<Server>::iterator it1;
+    // std::vector<Server>::iterator it2;
+
+    // for (it1 = _servers.begin(); it1 != _servers.end(); it1++)
+    // {
+    //     for (it2 = _servers.begin(); it2 != _servers.end(); it2++)
+    //     {
+    //         if (it1 != it2 && (*it1).getHost() == (*it2).getHost() && (*it1).getPort() == (*it2).getPort())
+    //             throw std::invalid_argument("Error: two servers cannot have the same ip and port");
+    //     }
+    // }
 }
 
 std::vector<Server> &ConfigParser::getServers()

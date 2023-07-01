@@ -13,7 +13,7 @@
 #include <sys/un.h>
 #include <arpa/inet.h>
 #include <list>
-#include <map>
+#include <set>
 #include <algorithm>
 
 Webserver *Webserver::_instance = NULL;
@@ -288,17 +288,24 @@ void Webserver::loop(void)
 {
     signal(SIGINT, SIG_IGN);
     signal(SIGINT, _request_exit); // ctrl-c
-    signal(SIGPIPE, SIG_IGN); // ignore broken pipe
+    signal(SIGPIPE, SIG_IGN); // writing to closed socket, or send(MSG_NOSIGNAL)
     signal(SIGCHLD, _on_cgi_exit); // waitpid
 
     t_listen_sockets listen_sockets;
-    for (size_t i = 0; i < _serverConfigs.size(); ++i)
     {
-        const int port = _serverConfigs[i].getPort();
-        std::string address = _serverConfigs[i].getHost();
-        // todo skip duplicate ports, instead of error, so multiple servers on same port
-        std::cout << "Webserver@" << address << ":" << port << std::endl;
-        listen_sockets.push_back(_create_listen_socket(address.c_str(), port));
+        std::stringstream ss;
+        std::set<std::string> bindings;
+        for (size_t i = 0; i < _serverConfigs.size(); ++i)
+        {
+            const int port = _serverConfigs[i].getPort();
+            const std::string address = _serverConfigs[i].getHost();
+            ss.str(std::string());
+            ss << address << ":" << port;
+            if (bindings.insert(ss.str()).second == false)
+                continue;
+            std::cout << "Webserver@" << address << ":" << port << std::endl;
+            listen_sockets.push_back(_create_listen_socket(address.c_str(), port));
+        }
     }
     _loop_sockets(listen_sockets);
     for (t_listen_sockets::iterator it = listen_sockets.begin(); it != listen_sockets.end(); ++it)
