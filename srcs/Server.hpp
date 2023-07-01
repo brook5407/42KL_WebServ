@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   server.hpp                                         :+:      :+:    :+:   */
+/*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 10:03:53 by chchin            #+#    #+#             */
-/*   Updated: 2023/06/25 23:42:29 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/01 23:16:17 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,6 +57,8 @@ class Server {
 		bool checkDigit(std::string str);
 		bool checkIP(std::string str);
 		std::vector<std::string> split(std::string str, std::string delimiter);
+		
+		friend class ParserError;
 		
 	friend std::ostream& operator<<(std::ostream& os, const Server& server);
 };

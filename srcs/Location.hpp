@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   location.hpp                                       :+:      :+:    :+:   */
+/*   Location.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 10:04:51 by chchin            #+#    #+#             */
-/*   Updated: 2023/06/19 22:35:12 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/01 23:10:27 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,8 @@
 # include <sstream>
 # include <set>
 # include <vector>
+# include <map>
+# include "ParserError.hpp"
 
 int ft_stoi(std::string str);
 
@@ -26,14 +28,15 @@ class Location {
 		~Location();
 
 	private:
-		std::string					_prefix;
-		std::string 				_root;
-		std::set<std::string>		_methods;
-		std::vector<std::string>	_index;
-		bool						_autoIndex;
-		std::pair<int, std::string>	_redirection;
-		bool						_isRedirected;
-		std::vector<std::string>	_cgiExtension;
+		std::string							_prefix;
+		std::string 						_root;
+		std::set<std::string>				_methods;
+		std::vector<std::string>			_index;
+		bool								_autoIndex;
+		std::pair<int, std::string>			_redirection;
+		bool								_isRedirected;
+		std::vector<std::string>			_cgiExtension;
+		std::map<std::string, std::string>	_cgiPath;
 
 	public:
 		void	setPrefix(std::string prefix);
@@ -43,6 +46,7 @@ class Location {
 		void 	setAutoIndex(std::string autoIndex);
 		void	setRedirection(std::string code, std::string url);
 		void	setCgiExtension(std::string extension);
+		void	setCgiPath(std::string extension, std::string path);
 
 		std::string 			getPrefix() const;
 		std::string 			getRoot() const;
@@ -51,7 +55,10 @@ class Location {
 		bool					checkAutoIndex() const;
 		std::pair<int, std::string> &getRedirection();
 		bool 					checkRedirection() const;
-		std::vector<std::string>&checkCgiExtension();
+		bool					checkCgiExtension(std::string extension) const;
+		std::string				getCgiPath(std::string extension) const;
+
+		friend class ParserError;
 
 	friend std::ostream &operator<<(std::ostream &out, const Location &location);
 };
