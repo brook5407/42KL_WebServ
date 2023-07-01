@@ -33,7 +33,6 @@ private:
     void _loop_sockets(t_listen_sockets &);
     void _process_request(Connection &connection);
     static void _on_cgi_exit(int signal);
-    void find_config(Request &request);
 
 };
 
