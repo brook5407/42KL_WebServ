@@ -23,12 +23,20 @@ static bool parse_request_line(
     return true;
 }
 
+// todo: support both \n and \r\n?
 Request::Request(const std::string &request)
 : _method(""), _uri(""), _search(""), _headers(), _content_length(0), is_ready(false), _body("")
 {
     const std::size_t pos_header_end = request.find("\r\n\r\n");
     if (pos_header_end == std::string::npos)
         return ;
+
+    // quicker chunked request completeness checker
+    if (request.size() > pos_header_end + 4
+        && request.find("Transfer-Encoding: chunked") != std::string::npos
+        && request.find("\r\n0\r\n\r\n", request.size() - 7) == std::string::npos)
+        return;
+
     // todo 400 & close connection
     if (!parse_request_line(request, _method, _uri, _search))
         return;
