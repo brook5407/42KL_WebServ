@@ -28,3 +28,20 @@ $POSTDATA
 $(env)
 </pre>
 END
+
+# echo all arguments
+echo "<h3>Arguments</h3>"
+echo "<pre>"
+for arg in "$@"
+do
+    echo "$arg"
+done
+echo "</pre>"
+
+# split query string
+echo "<h3>Query String</h3>"
+echo "<pre>"
+echo "$QUERY_STRING" | tr '&' '\n'
+echo "</pre>"
+echo "</body>"
+echo "</html>"
