@@ -33,7 +33,7 @@ void UploadHandler::execute(Request &req, Response &res)
             //find filename from body
             std::string::size_type pos_fn_start = body.find("filename=") + 10;
             std::string::size_type pos_fn_end = body.find("\r\n");
-            std::string filename = body.substr(pos_fn_start, pos_fn_end);
+            std::string filename = body.substr(pos_fn_start, pos_fn_end - pos_fn_start);
             pos_fn_end = filename.find_last_of("\"");
             filename = filename.substr(0, pos_fn_end);
             // find emptyline
@@ -42,7 +42,11 @@ void UploadHandler::execute(Request &req, Response &res)
             if (filename.empty())
                 throw HttpException(400, "Bad Request: filename not found");
             // save file
-            std::ofstream ofs(combine_path(req._script_name, filename).c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
+            filename = combine_path(req._script_name, filename);
+            std::cout << "filename: " << filename << " sz:" << body.size() << std::endl;
+            std::ofstream ofs(filename.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
+            if (!ofs.is_open())
+                throw HttpException(500, "Internal Server Error: failed to open file");
             ofs << body;
             res.send_content(200, "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Upload Success</title></head><body> \
             <h1>Upload Successful</h1><p>Your file has been successfully uploaded.</p> \

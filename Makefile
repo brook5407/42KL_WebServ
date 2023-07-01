@@ -75,13 +75,13 @@ test_conf:
 server {\n\
     listen 0.0.0.0:$(PORT);\n\
     server_name localhost;\n\
-    client_max_body_size 100m;\n\
+    client_max_body_size 100000000m;\n\
     location / {\n\
         root ./YoupiBanane;\n\
-        index youpi.bad_extension;\n\
+        autoindex on;\n\
         methods GET;\n\
     }\n\
-    location /put_test {\n\
+    location /put_test/ {\n\
         root ./YoupiBanane;\n\
         methods PUT;\n\
     }\n\
@@ -92,8 +92,18 @@ server {\n\
     location /directory {\n\
         root ./YoupiBanane;\n\
         index youpi.bad_extension;\n\
-        autoindex off;\n\
         cgi_extensions .bla;\n\
         methods GET POST;\n\
+    }\n\
+}\n\
+server {\n\
+    listen 0.0.0.0:$(PORT);\n\
+    server_name 127.0.0.1;\n\
+    client_max_body_size 1000000m;\n\
+    location / {\n\
+        root ./wwwroot;\n\
+        methods GET POST;\n\
+        autoindex on;\n\
+        cgi_extensions .sh;\n\
     }\n\
 }" > YoupiBanane.conf

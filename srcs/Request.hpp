@@ -1,14 +1,16 @@
 #ifndef REQUEST_HPP
 #define REQUEST_HPP
 
-#include "Configuration.hpp"
+#include "Server.hpp"
 #include <map>
+#include <vector>
 #include <string>
 
 class Request
 {
 public:
     Request(const std::string &request);
+    void find_location_config(std::vector<Server> &servers);
 
     //todo: throw httpexception which handled by middleware pipeline
     //todo: handle //, /. and /.. in path

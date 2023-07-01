@@ -1,6 +1,9 @@
 #include "Request.hpp"
 #include <iostream>
 #include <cstdlib>
+#include <algorithm>
+
+static std::string url_decode(const std::string &value);
 
 static bool parse_request_line(
     const std::string &request, std::string &method, std::string &uri, std::string &search)
@@ -117,4 +120,98 @@ Request::Request(const std::string &request)
         // ofs << body;
     }
     is_ready = true;
+}
+
+
+void Request::find_location_config(std::vector<Server> &_serverConfigs)
+{
+    this->_server_config = &_serverConfigs[0]; //first server config as default
+    if (this->_headers.count("Host"))
+    {
+        const std::size_t pos = this->_headers["Host"].find(":");
+        const std::string host = this->_headers["Host"].substr(0, pos);
+        size_t port = 80; //default
+        if (pos < this->_headers["Host"].size() - 2)
+            port = atoi(this->_headers["Host"].substr(pos + 1).c_str());
+        //todo handle possible malform host:port
+        for (size_t i = 0; i < _serverConfigs.size(); i++)
+        {
+            Server &conf = _serverConfigs[i];
+            if (conf.getPort() != port)
+                continue;
+            if (std::find(conf.getNames().begin(), conf.getNames().end(), host) != conf.getNames().end())
+            {
+                this->_server_config = &conf;
+                // std::cout << "found server config for " << host << ":" << port << std::endl;
+                break;
+            }
+        }
+    }
+    std::vector<Location> &locations = this->_server_config->getRoutes();
+    std::string route = this->_uri; //eg /dir/index.html
+    std::size_t pos;
+    while (1)
+    {
+        for (size_t i = 0; i < locations.size(); ++i)
+        {
+            if (locations[i].getPrefix() == route || locations[i].getPrefix() == route + "/")
+            {
+                this->_location_config = &locations[i];
+                this->_script_name = this->_uri;
+                pos = route.find('/');
+                if (pos != std::string::npos) //todo route always starts with /
+                {
+                    this->_script_name.erase(0, route.size()); // + 1);
+                    // this->_script_name = this->_script_name.substr(route.size() - pos);
+                }
+                this->_script_name = this->_location_config->getRoot() + this->_script_name;
+                while (this->_script_name.find("/..") != std::string::npos)
+                    this->_script_name.replace(this->_script_name.find("/.."), 2, "/");
+                while (this->_script_name.find("//") != std::string::npos)
+                    this->_script_name.replace(this->_script_name.find("//"), 2, "/");
+
+                _script_name = url_decode(_script_name);
+
+                std::cout << this->_uri << " => " << this->_script_name << std::endl;
+                // std::cout << "found location config for " << route << " | "
+                //      << *this->_location_config << std::endl;
+                return;
+            }
+        }
+
+        pos = route.find_last_of('/');
+        if (pos == std::string::npos)
+            break;
+        route.erase(pos);
+    }
+    // default to Location /
+}
+
+std::string url_decode(const std::string &value)
+{
+    std::string result;
+    result.reserve(value.size());
+    char ch[] = "FF";
+    
+    for (std::size_t i = 0; i < value.size(); ++i)
+    {
+        *ch = value[i];
+        
+        if (*ch == '%' && (i + 2) < value.size())
+        {
+            ch[0] = value[i + 1];
+            ch[1] = value[i + 2];
+            result.push_back(static_cast<char>(strtol(ch, NULL, 16)));
+            i += 2;
+        }
+        else if (*ch == '+')
+        {
+            result.push_back(' ');
+        }
+        else
+        {
+            result.push_back(*ch);
+        }
+    }
+    return result;
 }

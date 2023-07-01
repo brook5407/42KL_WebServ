@@ -14,7 +14,6 @@
 #include <arpa/inet.h>
 #include <list>
 #include <set>
-#include <algorithm>
 
 Webserver *Webserver::_instance = NULL;
 int g_exit = false;
@@ -36,68 +35,6 @@ Webserver::~Webserver(void)
     _instance = NULL;
 }
 
-void Webserver::find_config(Request &request)
-{
-    request._server_config = &_serverConfigs[0]; //first server config as default
-    if (request._headers.count("Host"))
-    {
-        const std::size_t pos = request._headers["Host"].find(":");
-        const std::string host = request._headers["Host"].substr(0, pos);
-        size_t port = 80; //default
-        if (pos < request._headers["Host"].size() - 2)
-            port = atoi(request._headers["Host"].substr(pos + 1).c_str());
-        //todo handle possible malform host:port
-        for (size_t i = 0; i < _serverConfigs.size(); i++)
-        {
-            Server &conf = _serverConfigs[i];
-            if (conf.getPort() != port)
-                continue;
-            if (std::find(conf.getNames().begin(), conf.getNames().end(), host) != conf.getNames().end())
-            {
-                request._server_config = &conf;
-                // std::cout << "found server config for " << host << ":" << port << std::endl;
-                break;
-            }
-        }
-    }
-    std::vector<Location> &locations = request._server_config->getRoutes();
-    std::string route = request._uri; //eg /dir/index.html
-    std::size_t pos;
-    while (1)
-    {
-        for (size_t i = 0; i < locations.size(); ++i)
-        {
-            if (locations[i].getPrefix() == route || locations[i].getPrefix() == route + "/")
-            {
-                request._location_config = &locations[i];
-                request._script_name = request._uri;
-                pos = route.find('/');
-                if (pos != std::string::npos) //todo route always starts with /
-                {
-                    request._script_name.erase(0, route.size()); // + 1);
-                    // request._script_name = request._script_name.substr(route.size() - pos);
-                }
-                request._script_name = request._location_config->getRoot() + request._script_name;
-                while (request._script_name.find("/..") != std::string::npos)
-                    request._script_name.replace(request._script_name.find("/.."), 2, "/");
-                while (request._script_name.find("//") != std::string::npos)
-                    request._script_name.replace(request._script_name.find("//"), 2, "/");
-
-                std::cout << request._uri << " => " << request._script_name << std::endl;
-                // std::cout << "found location config for " << route << " | "
-                //      << *request._location_config << std::endl;
-                return;
-            }
-        }
-
-        pos = route.find_last_of('/');
-        if (pos == std::string::npos)
-            break;
-        route.erase(pos);
-    }
-    // default to Location /
-}
-
 void Webserver::_process_request(Connection &connection)
 {
     // #if !__APPLE__ || !__MACH__
@@ -112,7 +49,7 @@ void Webserver::_process_request(Connection &connection)
     Request request(connection._in_buffer); // parser
     if (!request.is_ready)
         return;
-    find_config(request);
+    request.find_location_config(_serverConfigs);
     Response response(connection, _configuration);
    _pipeline.execute(request, response);
 }
