@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/13 15:50:01 by chchin            #+#    #+#             */
-/*   Updated: 2023/06/25 23:50:01 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/01 23:14:04 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ void Location::setMethod(std::string method)
 		method.compare("POST") && 
 		method.compare("DELETE") &&
         method.compare("PUT"))
-		throw std::invalid_argument("Error: Invalid method in location");
+		throw ParserError("Invalid method in location", method);
 	
 	_methods.insert(method);
 }
@@ -62,13 +62,13 @@ void Location::setAutoIndex(std::string autoIndex)
     else if (autoIndex == "off")
         this->_autoIndex = false;
     else
-        throw std::invalid_argument("Error: Invalid autoindex in location");
+        throw ParserError("Invalid autoindex in location", autoIndex);
 }
 
 void Location::setRedirection(std::string code, std::string url)
 {
     if (code != "301" && code != "302" && code != "303" && code != "307" && code != "308")
-        throw std::invalid_argument("Error: Invalid redirection code in location");
+        throw ParserError("Invalid redirection code in location", code);
     this->_redirection.first = ft_stoi(code);
     this->_redirection.second = url;
     this->_isRedirected = true;
@@ -76,7 +76,16 @@ void Location::setRedirection(std::string code, std::string url)
 
 void Location::setCgiExtension(std::string extension)
 {
+    if (!checkCgiExtension(extension))
+        throw ParserError("Invalid Cgi extension", extension);
     this->_cgiExtension.push_back(extension);
+}
+
+void Location::setCgiPath(std::string extension, std::string path)
+{
+    if (!checkCgiExtension(extension))
+        throw ParserError("Invalid Cgi extension", extension);
+    this->_cgiPath[extension] = path;
 }
 
 std::string Location::getPrefix() const
@@ -114,10 +123,17 @@ bool Location::checkRedirection() const
     return (this->_isRedirected);
 }
 
-std::vector<std::string> &Location::checkCgiExtension()
+bool Location::checkCgiExtension(std::string extension) const
 {
-    return (this->_cgiExtension);
+    if (extension[0] != '.')
+        return (false);
+    return (true);
 }
+
+std::string Location::getCgiPath(std::string extension) const
+{
+    return (this->_cgiPath.find(extension)->second);
+} 
 
 std::ostream &operator<<(std::ostream &out, const Location &location)
 {
@@ -136,6 +152,10 @@ std::ostream &operator<<(std::ostream &out, const Location &location)
     out << "Cgi extension: ";
     for (std::vector<std::string>::const_iterator it = location._cgiExtension.begin(); it != location._cgiExtension.end(); it++)
         out << *it << " ";
+    out << std::endl;
+    out << "Cgi path:";
+    for (std::map<std::string, std::string>::const_iterator it = location._cgiPath.begin(); it != location._cgiPath.end(); it++)
+        out << it->first << " " << it->second << " ";
     out << std::endl;
     return (out);
 }

@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   server.cpp                                         :+:      :+:    :+:   */
+/*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/13 15:50:21 by chchin            #+#    #+#             */
-/*   Updated: 2023/06/25 23:42:45 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/01 23:17:39 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,7 @@ std::vector<std::string> ft_split(std::string str, std::string delimiter)
 }
 
 Server::Server() {
+    this->_maxBodySize = 1000000;
 }
 
 Server::~Server() {
@@ -51,7 +52,7 @@ void	Server::setName(std::string name) {
 
 void	Server::setHost(std::string IP) {
     if (!checkIP(IP))
-        throw std::invalid_argument("Error: Invalid IP address");
+        throw ParserError("Invalid IP address", IP);
     else if (IP == "localhost")
         this->_host = "127.0.0.1";
     else
@@ -60,27 +61,36 @@ void	Server::setHost(std::string IP) {
 
 void	Server::setPort(std::string port) {
     if (!checkDigit(port))
-        throw std::invalid_argument("Error: Invalid port number");
+        throw ParserError("Invalid port number", port);
     if (ft_stoi(port) > 65535)
-        throw std::invalid_argument("Error Invalid port number");
+        throw ParserError("Port number exceed", port);
     else
         this->_port = ft_stoi(port);
 }
 
 void	Server::setErrorPage(std::string code, std::string path) {
     if (!checkDigit(code))
-        throw std::invalid_argument("Error: Invalid error code");
+        throw ParserError("Invalid error code", code);
     this->_errorPages.insert(std::pair<int, std::string>(ft_stoi(code), path));
 }
 
 void	Server::setMaxBodySize(std::string size) {
     int lastchar = size.length() - 1;
-    if (size[lastchar] != 'm')
-        throw std::invalid_argument("Error: Invalid client buffet size");
-    size.erase(lastchar);
-    if (!checkDigit(size))
-            throw std::invalid_argument("Error: Invalid client buffet size");
-    this->_maxBodySize = ft_stoi(size);
+    if (checkDigit(size))
+        this->_maxBodySize = ft_stoi(size);
+    else if (checkDigit(size.substr(0, lastchar)))
+    {
+        if (size[lastchar] == 'k' || size[lastchar] == 'K')
+            this->_maxBodySize = ft_stoi(size.substr(0, lastchar)) * 1000;
+        else if (size[lastchar] == 'm' || size[lastchar] == 'M')
+            this->_maxBodySize = ft_stoi(size.substr(0, lastchar)) * 1000000;
+        else if (size[lastchar] == 'g' || size[lastchar] == 'G')
+            this->_maxBodySize = ft_stoi(size.substr(0, lastchar)) * 1000000000;
+        else
+            throw ParserError("Invalid client buffet size", size);
+    }
+    else
+        throw ParserError("Invalid client buffet size", size);
 }
 
 void	Server::addLocation(Location location) {

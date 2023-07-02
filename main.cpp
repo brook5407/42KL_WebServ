@@ -2,7 +2,7 @@
 #include <sstream>
 #include <iostream>
 #include <vector>
-#include "ConfigParser.hpp"
+#include "srcs/ConfigParser.hpp"
 
 int main(int argc, char **argv)
 {

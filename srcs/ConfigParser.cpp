@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/20 10:12:24 by chchin            #+#    #+#             */
-/*   Updated: 2023/06/25 23:31:57 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/01 22:12:09 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@ ConfigParser::ConfigParser(std::string configFile)
         parseConfig(config);
     }
     else
-        throw std::invalid_argument("Error: cannot open file");
+        throw ParserError("Cannot open file", configFile);
     checkServer();
 }
 
@@ -50,7 +50,7 @@ void ConfigParser::parseConfig(std::vector<std::string> config)
         if (line[0] == "server")
         {
             if (line.size() != 2 || line[1] != "{")
-                throw std::invalid_argument("Error: wrong server format");
+                throw ParserError("Wrong server format", *line_pos);
             else
             {
                 line_pos++;
@@ -59,7 +59,7 @@ void ConfigParser::parseConfig(std::vector<std::string> config)
             }
         }
         else
-            throw std::invalid_argument("Error: unknown block >> " + *line_pos);
+            throw ParserError("Unknown block", *line_pos);
     }
 }
 
@@ -79,7 +79,7 @@ void ConfigParser::parseServer(conf_t &line_pos, conf_t end)
         else if (line[0] == "location")
         {
             if (line.size() != 3 || line[2] != "{")
-                throw std::invalid_argument("Error: wrong location format");
+                throw ParserError("Wrong location format", *line_pos);
             else
             {
                 server.addLocation(parseLocation(line_pos, end));
@@ -89,12 +89,12 @@ void ConfigParser::parseServer(conf_t &line_pos, conf_t end)
         else if (line[0] == "listen")
         {
             if (line.size() != 2)
-                throw std::invalid_argument("Error: listen block requires an ip and a port");
+                throw ParserError("Listen block requires an ip and a port", *line_pos);
             else
             {
                 std::vector<std::string> ip_port = ft_split(line[1], ":");
                 if (ip_port.size() == 1)
-                    throw std::invalid_argument("Error: listen block requires an ip and a port");
+                    throw ParserError("Listen block requires an ip and a port", *line_pos);
                 else
                 {
                     server.setHost(ip_port[0]);
@@ -105,7 +105,7 @@ void ConfigParser::parseServer(conf_t &line_pos, conf_t end)
         else if (line[0] == "server_name")
         {
             if (line.size() < 2)
-                throw std::invalid_argument("Error: server_name block requires at least one name");
+                throw ParserError("Server_name block requires at least one name", *line_pos);
             else
             {
                 for (size_t i = 1; i < line.size(); i++)
@@ -115,23 +115,22 @@ void ConfigParser::parseServer(conf_t &line_pos, conf_t end)
         else if (line[0] == "client_max_body_size")
         {
             if (line.size() != 2)
-                throw std::invalid_argument("Error: client_max_body_size block requires a size");
+                throw ParserError("Client_max_body_size block requires a size", *line_pos);
             else
                 server.setMaxBodySize(line[1]);
         }
         else if (line[0] == "error_page")
         {
             if (line.size() != 3)
-                throw std::invalid_argument("Error: error_page block requires a code and a path");
+                throw ParserError("Error_page block requires a code and a path", *line_pos);
             else
                 server.setErrorPage(line[1], line[2]);
         }
         else
-            throw std::invalid_argument("Error: unknown block >> " + *line_pos);
+            throw ParserError("Invalid block", *line_pos);
         line_pos++;
     }
     _servers.push_back(server);
-    // std::cout << *server << std::endl; // DEBUG
 }
 
 Location ConfigParser::parseLocation(conf_t &line_pos, conf_t end)
@@ -153,23 +152,23 @@ Location ConfigParser::parseLocation(conf_t &line_pos, conf_t end)
         else if (line[0] == "location")
         {
             if (line.size() != 3)
-                throw std::invalid_argument("Error: location block requires a path and a block");
+                throw ParserError("Location block requires a path and a block", *line_pos);
             else
                 location.setPrefix(line[1]);
         }
         else if (*line_pos->rbegin() != ';')
-            throw std::invalid_argument("Error: the line must end with semicolon >> " + *line_pos);
+            throw ParserError("Line must end with semicolon", *line_pos);
         else if (line[0] == "root")
         {
             if (line.size() != 2)
-                throw std::invalid_argument("Error: root block requires a path");
+                throw ParserError("Root block requires a path", *line_pos);
             else
                 location.setRoot(line[1]);
         }
         else if (line[0] == "methods")
         {
             if (line.size() < 2)
-                throw std::invalid_argument("Error: methods block requires at least one method");
+                throw ParserError("Methods block requires at least one method", *line_pos);
             else
             {
                 for (size_t i = 1; i < line.size(); i++)
@@ -179,7 +178,7 @@ Location ConfigParser::parseLocation(conf_t &line_pos, conf_t end)
         else if (line[0] == "index")
         {
             if (line.size() < 2)
-                throw std::invalid_argument("Error: index block requires a filename"); 
+                throw ParserError("Index block requires a filename", *line_pos); 
             else
             {
                 for (size_t i = 1; i < line.size(); i++)
@@ -189,27 +188,34 @@ Location ConfigParser::parseLocation(conf_t &line_pos, conf_t end)
         else if (line[0] == "autoindex")
         {
             if (line.size() != 2)
-                throw std::invalid_argument("Error: autoindex block requires on or off");
+                throw ParserError("Autoindex block requires on or off", *line_pos);
             else
                 location.setAutoIndex(line[1]);
         }
         else if (line[0] == "cgi_extensions")
         {
             if (line.size() < 2)
-                throw std::invalid_argument("Error: cgi_extensions block requires at least one extension");
+                throw ParserError("Cgi_extensions block requires at least one extension", *line_pos);
             else
-                location.setCgiExtension(line[1]);
-
+            {
+                for (size_t i = 1; i < line.size(); i++)
+                    location.setCgiExtension(line[i]);
+            }
         }
         else if (line[0] == "return")
         {
             if (line.size() != 3)
-                throw std::invalid_argument("Error: return block requires a code and a path");
+                throw ParserError("Return block requires a code and a path", *line_pos);
             else
                 location.setRedirection(line[1], line[2]);
         }
+        else if (line[0] == "add_cgi")
+            if (line.size() < 2 && line.size() > 3)
+                throw ParserError("Add_cgi block requires at least one cgi extension", *line_pos);
+            else
+                location.setCgiPath(line[1], line[2]);
         else
-            throw std::invalid_argument("Error: unknown block >> " + *line_pos);
+            throw ParserError("Invalid block", *line_pos);
         line_pos++;
     }
     return (location);
