@@ -53,6 +53,11 @@ class Middleware
             // return (filepath.substr(filepath.find_last_of('.')) == extension);
         }
 
+        std::string get_extension(const std::string &path)
+        {
+            return path.substr(path.find_last_of('.'));
+        }
+
         std::string combine_path(const std::string &path1, const std::string &path2)
         {
             std::string path = path1;

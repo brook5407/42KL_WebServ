@@ -1,7 +1,7 @@
 NAME		:= webserv
 OBJFILES	:= webserv.o Webserver.o \
 				Connection.o Request.o Response.o \
-				Server.o Location.o ConfigParser.o \
+				Server.o Location.o ConfigParser.o ParserError.o \
 				Middleware.o Pipeline.o ErrorHandler.o \
 				AllowMethodHandler.o AutoIndexHandler.o CGIHandler.o CGI.o \
 				IndexHandler.o RedirectHandler.o StaticFileHandler.o UploadHandler.o \
@@ -14,6 +14,12 @@ CXXFLAGS  	+= -O3 -flto
 LDLIBS		:= -lstdc++ $(ASAN)
 VPATH		:= srcs srcs/middlewares
 PORT		:= 8080
+
+ifeq ($(shell uname), Linux)
+	CGI_TESTER	= ubuntu_cgi_tester
+else
+	CGI_TESTER	= cgi_tester
+endif
 
 # for Kishyan wsl without g++
 ifeq ($(shell which g++), )
@@ -75,7 +81,7 @@ test_conf:
 server {\n\
     listen 0.0.0.0:$(PORT);\n\
     server_name localhost;\n\
-    client_max_body_size 100000000m;\n\
+    client_max_body_size 100m;\n\
     location / {\n\
         root ./YoupiBanane;\n\
         autoindex on;\n\
@@ -92,18 +98,20 @@ server {\n\
     location /directory {\n\
         root ./YoupiBanane;\n\
         index youpi.bad_extension;\n\
-        cgi_extensions .bla;\n\
+        add_cgi .bla $(CGI_TESTER);\n\
         methods GET POST;\n\
     }\n\
 }\n\
 server {\n\
     listen 0.0.0.0:$(PORT);\n\
     server_name 127.0.0.1;\n\
-    client_max_body_size 1000000m;\n\
+    client_max_body_size 1m;\n\
     location / {\n\
         root ./wwwroot;\n\
         methods GET POST;\n\
         autoindex on;\n\
-        cgi_extensions .sh;\n\
+        add_cgi .sh /bin/sh;\n\
+        add_cgi .cgi ./;\n\
+        add_cgi .pl /usr/local/bin/python3;\n\
     }\n\
 }" > YoupiBanane.conf

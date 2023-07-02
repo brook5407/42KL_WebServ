@@ -132,7 +132,9 @@ bool Location::checkCgiExtension(std::string extension) const
 
 std::string Location::getCgiPath(std::string extension) const
 {
-    return (this->_cgiPath.find(extension)->second);
+    if (this->_cgiPath.count(extension))
+        return (this->_cgiPath.at(extension));
+    return (std::string());
 } 
 
 std::ostream &operator<<(std::ostream &out, const Location &location)
