@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/13 15:50:01 by chchin            #+#    #+#             */
-/*   Updated: 2023/07/01 23:14:04 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/02 17:11:28 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -132,7 +132,10 @@ bool Location::checkCgiExtension(std::string extension) const
 
 std::string Location::getCgiPath(std::string extension) const
 {
-    return (this->_cgiPath.find(extension)->second);
+    if (this->_cgiPath.find(extension) != this->_cgiPath.end())
+        return (this->_cgiPath.find(extension)->second);
+    else
+        return ("");
 } 
 
 std::ostream &operator<<(std::ostream &out, const Location &location)

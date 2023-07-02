@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/20 10:12:24 by chchin            #+#    #+#             */
-/*   Updated: 2023/07/01 22:12:09 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/02 16:25:23 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -206,8 +206,8 @@ Location ConfigParser::parseLocation(conf_t &line_pos, conf_t end)
                 location.setRedirection(line[1], line[2]);
         }
         else if (line[0] == "add_cgi")
-            if (line.size() < 2 && line.size() > 3)
-                throw ParserError("Add_cgi block requires at least one cgi extension", *line_pos);
+            if (line.size() != 3)
+                throw ParserError("Add_cgi block requires cgi extension and a path", *line_pos);
             else
                 location.setCgiPath(line[1], line[2]);
         else
