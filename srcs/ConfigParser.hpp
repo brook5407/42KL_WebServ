@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/19 23:41:40 by chchin            #+#    #+#             */
-/*   Updated: 2023/07/01 23:08:24 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/03 14:52:54 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,22 +40,6 @@ class ConfigParser
     private:
         std::vector<Server>   _servers;
 
-    // public:
-    //     class ParserError: public std::exception
-	// 	{
-	// 		private:
-	// 			std::string _msg;
-	// 		public:
-	// 			ParserError() {}
-	// 			ParserError(std::string error, std::string line){
-    //                 _msg = "\033[1m\033[31mError: \033[0m" + error + " => " + line.substr(line.find_first_not_of(" \t"));
-    //             }
-    //             ~ParserError() throw() {}
-	// 			const char *what () const throw ()
-	// 			{
-	// 				return _msg.c_str();
-	// 			}
-	// 	};
 };
 
 #endif

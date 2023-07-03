@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/20 10:12:24 by chchin            #+#    #+#             */
-/*   Updated: 2023/07/02 16:25:23 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/03 20:41:22 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -224,10 +224,14 @@ void ConfigParser::checkServer()
     
     for (it1 = _servers.begin(); it1 != _servers.end(); it1++)
     {
+        if ((*it1).getHost() == "")
+            throw ParserError("No ip in the configuration file", "listen");
+        if ((*it1).getPort() == 0)
+            throw ParserError("No port in the configuration file", "listen");
         for (it2 = _servers.begin(); it2 != _servers.end(); it2++)
         {
             if (it1 != it2 && (*it1).getHost() == (*it2).getHost() && (*it1).getPort() == (*it2).getPort())
-                throw std::invalid_argument("Error: two servers cannot have the same ip and port");
+                throw ParserError("Two servers cannot have the same ip and port", (*it1).getHost() + ":" + std::to_string((*it1).getPort()));
         }
     }
 }
