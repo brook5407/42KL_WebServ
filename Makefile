@@ -5,7 +5,7 @@ OBJFILES	:= webserv.o Connection.o \
 DEPFILES	:= $(OBJFILES:.o=.d)
 ASAN		:= -fsanitize=address
 CXXFLAGS	:= -Wall -Wextra -Werror -Wshadow -std=c++98 -MMD $(ASAN) -Isrcs 
-CXXFLAGS  	+= -O3 -flto
+# CXXFLAGS  	+= -O3 -flto
 # CXXFLAGS  	+= -g3
 LDLIBS		:= -lstdc++ $(ASAN)
 VPATH		:= srcs

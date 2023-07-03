@@ -11,6 +11,7 @@
 #include <iostream>
 #include <dirent.h>
 #include "CGI.hpp"
+#include "Cookie.hpp"
 
 template <typename T>
 struct Singleton
@@ -269,6 +270,44 @@ class ErrorPage: public Middleware
         }
 };
 
+class SessionHandler : public Middleware
+{
+    public:
+        void execute(Request &req, Response &res)
+        {
+            current_session_ID = extract_cookie(req._headers["Cookie"]);
+            if (current_session_ID.empty())
+            {
+                current_session_ID = "Random";
+                // current session id lost when cgi exit
+                res.set_header("Set-Cookie", "ID=" + current_session_ID);
+            }
+            Middleware::execute(req, res);
+        }
+
+        std::string get_session()
+        {
+            return _session[current_session_ID];
+        }
+
+        std::string extract_cookie(const std::string &cookie_value)
+        {
+            // parse here
+            (void) cookie_value;
+            return "";
+        }
+
+        void set_session(const std::string &new_value)
+        {
+            _session[current_session_ID] = new_value;
+        }
+
+
+        // current session id lost when cgi exit
+        std::string current_session_ID;
+        std::map<std::string, std::string> _session;
+};
+
 extern char **environ;
 
 class CgiRunner: public Middleware
@@ -298,6 +337,8 @@ class CgiRunner: public Middleware
                     cgi.add_envp("SERVER_PROTOCOL", "HTTP/1.1");
                     cgi.add_envp("PATH_INFO", req._uri);
                     cgi.add_envp("QUERY_STRING", req._search);
+                    cgi.add_envp("HTTP_SESSION", Singleton<SessionHandler>::get_instance()->get_session());
+                    // std::cout << "------" << req._search << std::endl;
 
                     // cgi.add_envp("CONTENT_LENGTH", to_string(req._content_length));
                     // cgi.add_envp("CONTENT_TYPE", req._headers["Content-Type"]);
@@ -319,7 +360,8 @@ class CgiRunner: public Middleware
                     #if __APPLE__ && __MACH__
                     cgi.setup_bash("/usr/local/bin/python3", req._script_name, req._body);
                     #else
-                    cgi.setup_bash("ubuntu_cgi_tester", req._script_name, req._body);
+                    // cgi.setup_bash("ubuntu_cgi_tester", req._script_name, req._body);
+                    cgi.setup_bash("/usr/bin/python3", req._script_name, req._body);
                     #endif
                     return;
                 }
@@ -327,6 +369,7 @@ class CgiRunner: public Middleware
             Middleware::execute(req, res);
         }
 };
+
 
 class Logger: public Middleware
 {
@@ -382,7 +425,7 @@ class UploadDelete: public Middleware
                     if (filename.empty())
                         throw HttpException(400, "Bad Request: filename not found");
                     // save file
-                    std::ofstream ofs(req._script_name + filename, std::ios::out | std::ios::trunc | std::ios::binary);
+                    std::ofstream ofs((req._script_name + filename).c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
                     ofs << body;
                     res.send_content(200, "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Upload Success</title></head><body> \
                     <h1>Upload Successful</h1><p>Your file has been successfully uploaded.</p> \
@@ -473,8 +516,8 @@ class Pipeline : public Middleware
         Pipeline()
         {
             add(Singleton<ErrorPage>::get_instance());
+            add(Singleton<SessionHandler>::get_instance());
             add(Singleton<Logger>::get_instance());
-            // add(Singleton<Session>::get_instance());
             add(Singleton<KeepAliveHandler>::get_instance());
             add(Singleton<CheckMethod>::get_instance());
             add(Singleton<Redirect>::get_instance());

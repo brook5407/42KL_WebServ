@@ -23,8 +23,14 @@ class Response
         void send_file(int status_code, const std::string &filepath);
         void send_cgi_fd(int fd);
         void set_keep_alive(bool keep_alive);
+        void set_header(const std::string &key, const std::string &value)
+        {
+            _headers[key] = value;
+        }
 
         Connection &_connection;
+        bool    cookie_status;
+        std::map<std::string, std::string> _headers;
     private:
         Configuration &_configuration;
 

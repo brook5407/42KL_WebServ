@@ -113,6 +113,22 @@ void Webserver::_process_request(Connection &connection)
         return;
     find_config(request);
     Response response(connection, _configuration);
+    // std::cout << "uri is " << request._uri << " script is " << request._script_name << std::endl;
+    if (this->_cookie.check_cookie(request._headers) == false)
+        response.cookie_status = false;
+    else
+    {
+        response.cookie_status = true;
+        std::string new_uri = this->_cookie.get_uri();
+        if (request._uri == "/" && new_uri.empty() == false)
+        {
+            request._uri = this->_cookie.get_uri();
+            request._script_name = this->_cookie.get_script();
+        }
+            // connection._cookie.redirect_cookie(request._uri, request._script_name);
+        // std::cout << "uri is " << request._uri << " script is " << request._script_name << std::endl;
+    }
+    this->_cookie.set_cookie(request._uri, request._script_name, connection._client_ip);
    _pipeline.execute(request, response);
 }
 

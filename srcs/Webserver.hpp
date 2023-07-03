@@ -9,6 +9,7 @@
 #include "Middleware.hpp"
 #include "Connection.hpp"
 #include "Server.hpp"
+#include "Cookie.hpp"
 
 // todo tele netstat established and connections count
 // todo check netstat browser TIME_WAIT
@@ -18,6 +19,7 @@ public:
     Webserver(const std::string &config_filepath);
     ~Webserver(void);
     void loop(void);
+    Cookie  _cookie;
 
 private:
     typedef std::list<int> t_listen_sockets;

@@ -1,4 +1,5 @@
 #include "Response.hpp"
+#include "Middleware.hpp"
 
 void Response::send_location(int status_code, const std::string &location)
 {
@@ -81,14 +82,35 @@ void Response::send_cgi_fd(int fd)
     char *it = std::search(header, header + read_size, "\r\n\r\n", (const char *)("\r\n\r\n") + 4);
     if (it == header + read_size)
     {
-        std::cout << "header not found" << std::endl;
+        // std::cout << "header not found" << std::endl;
+        std::stringstream ss_end;
+        add_header(ss_end, 500);
+        ss_end << "\r\nHeader not found";
+        end(ss_end);
         return;
     }
     size_t header_size = it - header + 4;
     std::stringstream ss;
     add_header(ss, 200); // todo status from stdout
     ss << "Content-Length: " << fsize - header_size << "\r\n";
-    lseek(fd, 0, SEEK_SET);
+    std::stringstream cgi_ss(header);
+    std::string cgi_line;
+    char session_key[] = "X-Replace-Session:";
+    while (std::getline(cgi_ss, cgi_line))
+    {
+        if (cgi_line.empty() && cgi_line[0] == '\r')
+            break;
+        if (cgi_line.find(session_key) == 0)
+        {
+            Singleton<SessionHandler>::get_instance()->set_session(cgi_line.erase(0, sizeof(session_key)));
+            continue;
+        }
+        else
+            ss << cgi_line << "\n";
+    }
+    ss << "\r\n";
+    // lseek(fd, 0, SEEK_SET);
+    lseek(fd, header_size, SEEK_SET);
     _connection._in_fd = fd;
     end(ss);
     // std::cout << "send fd " << _fd << " sz:" << fsize << std::endl;
@@ -102,12 +124,15 @@ void Response::set_keep_alive(bool keep_alive)
 void Response::add_header(std::stringstream &ss, int status_code)
 {
     ss << "HTTP/1.1 " << status_code << ' ' << _configuration._reason_phrase[status_code] << "\r\n";
+    // if (cookie_status == false)
+    //     ss << "Set-Cookie: ID=" << _connection._client_ip << "\r\n";
+        // _connection._cookie.set_cookie(ss, _connection._client_ip);
     if (_connection.keep_alive())
         ss << "Connection: keep-alive\r\n";
     else
         ss << "Connection: close\r\n";
-    // for (std::map<std::string, std::string>::iterator it = _headers.begin(); it != _headers.end(); ++it)
-    //     ss << it->first << ": " << it->second << "\r\n";
+    for (std::map<std::string, std::string>::iterator it = _headers.begin(); it != _headers.end(); ++it)
+        ss << it->first << ": " << it->second << "\r\n";
 }
 
 void Response::end(std::stringstream &ss)
