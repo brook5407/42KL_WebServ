@@ -25,7 +25,7 @@ void generate_html(std::stringstream &ss, DIR *dir, const std::string &uri)
     struct dirent *entry;
 
     ss << "<html><body>";
-    ss << "<h1>Index of " + uri + "</h1>";
+    ss << "<h1>Index of " << uri << "</h1>";
     ss << "<pre>";
     ss << "<img src=\"/.hidden/icon/blank.png\"";
     ss << "<a href=\"?NA\">Name</a>";
@@ -44,10 +44,10 @@ void generate_html(std::stringstream &ss, DIR *dir, const std::string &uri)
         if (entry->d_type != DT_DIR && entry->d_type != DT_REG)
             continue;
         if (entry->d_type == DT_DIR)
-            ss << "<li><img src=\"/.hidden/icon/folder.png\"    >";
+            ss << "<li><img src=\"/.hidden/icon/folder.png\">";
         else
-            ss << "<li><img src=\"/.hidden/icon/image.png\" >";
-        ss << std::string() + "<a href=\"" + uri;
+            ss << "<li><img src=\"/.hidden/icon/image.png\">";
+        ss << "<a href=\"" << uri;
         // add curent directory slash if not present
         if (uri[uri.size() - 1] != '/')
             ss << "/";
@@ -55,7 +55,7 @@ void generate_html(std::stringstream &ss, DIR *dir, const std::string &uri)
         // append slash to subdirectory
         if (entry->d_type == DT_DIR)
             ss << "/";
-        ss << std::string() + "\">" + entry->d_name;
+        ss << "\">" << entry->d_name;
         if (entry->d_type == DT_DIR)
             ss << "/";
         ss << "</a>";

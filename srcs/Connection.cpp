@@ -73,15 +73,14 @@ void Connection::transmit()
 
     if (!_out_buffer.empty())
     {
-        int length = send(_fd, _out_buffer.c_str(),
-            (_out_buffer.size() > BUFFER_SIZE? BUFFER_SIZE: _out_buffer.size()), 0);
+        int length = send(_fd, _out_buffer.c_str(), std::min((size_t)BUFFER_SIZE, _out_buffer.size()), 0);
         if (length < 1)
         {
             _close();
             return;
         }
         // std::cout << "SENT " << length << " to " << _fd <<  std::endl;
-        _out_buffer = _out_buffer.substr(length);
+        _out_buffer.erase(0, length);
 
         //stop sending when buffer sent and no file to send
         if (_out_buffer.empty() && !_ifile.is_open() && _in_fd == -1)
