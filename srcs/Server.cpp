@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/13 15:50:21 by chchin            #+#    #+#             */
-/*   Updated: 2023/07/03 14:58:41 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/04 11:30:30 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -130,6 +130,10 @@ std::string Server::getErrorPagePath(int code) const{
 
 size_t Server::getMaxBodySize() const {
     return (this->_maxBodySize);
+}
+
+std::vector<Location> &Server::getRoutes() {
+    return (this->_routes);
 }
 
 std::ostream& operator<<(std::ostream& os, const Server& server) {

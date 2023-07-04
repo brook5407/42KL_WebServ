@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/20 10:12:24 by chchin            #+#    #+#             */
-/*   Updated: 2023/07/03 20:41:22 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/04 23:04:20 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -188,6 +188,13 @@ Location ConfigParser::parseLocation(conf_t &line_pos, conf_t end)
             else
                 location.setAutoIndex(line[1]);
         }
+        else if (line[0] == "client_max_body_size")
+        {
+            if (line.size() != 2)
+                throw ParserError("Client_max_body_size block requires a size", *line_pos);
+            else
+                location.setMaxBodySize(line[1]);
+        }
         else if (line[0] == "cgi_extensions")
         {
             if (line.size() < 2)
@@ -219,19 +226,30 @@ Location ConfigParser::parseLocation(conf_t &line_pos, conf_t end)
 
 void ConfigParser::checkServer()
 {
-    std::vector<Server>::iterator it1;
-    std::vector<Server>::iterator it2;
+    std::vector<Server>::iterator it_s;
     
-    for (it1 = _servers.begin(); it1 != _servers.end(); it1++)
+    for (it_s = _servers.begin(); it_s != _servers.end(); it_s++)
     {
-        if ((*it1).getHost() == "")
+        if ((*it_s).getHost() == "")
             throw ParserError("No ip in the configuration file", "listen");
-        if ((*it1).getPort() == 0)
+        if ((*it_s).getPort() == 0)
             throw ParserError("No port in the configuration file", "listen");
-        for (it2 = _servers.begin(); it2 != _servers.end(); it2++)
+        if ((*it_s).getRoutes().size() == 0)
+            throw ParserError("No location in the configuration file", "location ./ {}");
+        else
         {
-            if (it1 != it2 && (*it1).getHost() == (*it2).getHost() && (*it1).getPort() == (*it2).getPort())
-                throw ParserError("Two servers cannot have the same ip and port", (*it1).getHost() + ":" + std::to_string((*it1).getPort()));
+            std::vector<Location>::iterator it_loc;
+            std::vector<Location> route = (*it_s).getRoutes();
+            for (it_loc = route.begin(); it_loc != route.end(); it_loc++)
+            {
+                if ((*it_loc).getRoot() == "")
+                {    
+                    if ((*it_loc).checkRedirection() == false )
+                        throw ParserError("No root in the configuration file", "root");
+                }
+                if ((*it_loc).getMethods().size() == 0)
+                    throw ParserError("No method in the configuration file", "methods");
+            }
         }
     }
 }
