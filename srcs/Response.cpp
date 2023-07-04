@@ -83,10 +83,11 @@ void Response::send_cgi_fd(int fd, const std::string &session_id)
     if (it == header + read_size)
     {
         // std::cout << "header not found" << std::endl;
-        std::stringstream ss_end;
-        add_header(ss_end, 500);
-        ss_end << "\r\nHeader not found";
-        end(ss_end);
+        send_content(500, "Header not found");
+        // std::stringstream ss_end;
+        // add_header(ss_end, 500);
+        // ss_end << "\r\nHeader not found";
+        // end(ss_end);
         return;
     }
     size_t header_size = it - header + 4;

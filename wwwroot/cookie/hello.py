@@ -46,7 +46,6 @@ else :
 	user_data = parse_urlencoded_formdata(form_data)
 
 # print("X-Replace-Session: blabla\r")
-print("X-Cehck: \r")
 print("Content-Type: text/html\r")  # Set the Content-Type header to indicate HTML content
 print("\r")  # Print an empty line to indicate the end of the header
 print(user_data) 

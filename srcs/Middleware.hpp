@@ -369,7 +369,7 @@ class CgiRunner: public Middleware
                     cgi.setup_bash("/usr/local/bin/python3", req._script_name, req._body);
                     #else
                     // cgi.setup_bash("ubuntu_cgi_tester", req._script_name, req._body);
-                    cgi.setup_bash("/usr/bin/python3", req._script_name, req._body);
+                    cgi.setup_bash("/usr/bin/bash", req._script_name, req._body);
                     #endif
                     return;
                 }

@@ -167,7 +167,7 @@ void Webserver::_loop_sockets(t_listen_sockets &listen_sockets)
         // for convenience is_timeout and select timeout should be the same
         for (std::list<CGI>::iterator it = Singleton<CgiRunner>::get_instance()->_CGI.begin(); it != Singleton<CgiRunner>::get_instance()->_CGI.end();)
         {
-            if (it->is_timeout(300))
+            if (it->is_timeout(10))
             {
                 it->_response.send_content(502, "Process has timed out");
                 kill(it->child_pid, SIGKILL);

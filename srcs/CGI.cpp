@@ -4,7 +4,9 @@
 CGI::CGI(Response response)
 : child_pid(-1), _response(response),
 file_in(NULL), file_out(NULL), file_in_fd(-1), file_out_fd(-1)
-{ }
+{ 
+	_response._connection.status() = WAITING;
+}
 
 CGI::~CGI()
 {

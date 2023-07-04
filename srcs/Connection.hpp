@@ -7,7 +7,7 @@
 #include <iostream>
 
 #define BUFFER_SIZE 100 * 1024 * 1024
-enum CONNECTION_STATUS {READING, SENDING, CLOSED};
+enum CONNECTION_STATUS {READING, SENDING, CLOSED, WAITING};
 
 class Connection
 {
@@ -47,7 +47,7 @@ class Connection
         void transmit();
         void write(const std::string &data);
         void read();
-        enum CONNECTION_STATUS status() const { return _status; }
+        enum CONNECTION_STATUS &status() { return _status; }
     	friend std::ostream& operator<<(std::ostream& os, const Connection& connection);
         void set_keep_alive(bool keep_alive) { _keep_alive = keep_alive; }
         bool keep_alive() const { return _keep_alive; }
