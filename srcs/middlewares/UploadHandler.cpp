@@ -64,9 +64,6 @@ void UploadHandler::execute(Request &req, Response &res)
             filename = combine_path(req._script_name, filename); // prefix document root
         else
             filename = req._script_name;
-        // todo separate middleware
-        if (req._body.size() > 100 && filename.find("post_body") != std::string::npos)  
-            throw HttpException(413, "Request Entity Too Large");
         save_file(filename, req._body);
         res.send_content(200, filename.substr(filename.find_last_of('/') + 1) + " has been uploaded!");
     }

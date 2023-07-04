@@ -5,6 +5,7 @@ OBJFILES	:= webserv.o Webserver.o \
 				Middleware.o Pipeline.o ErrorHandler.o \
 				AllowMethodHandler.o AutoIndexHandler.o CGIHandler.o CGI.o \
 				IndexHandler.o RedirectHandler.o StaticFileHandler.o UploadHandler.o \
+				LimitRequestBodyHandler.o
 
 DEPFILES	:= $(OBJFILES:.o=.d)
 # ASAN		:= -fsanitize=address
@@ -94,6 +95,7 @@ server {\n\
     location /post_body {\n\
         root ./YoupiBanane/post_body;\n\
         methods POST;\n\
+		client_max_body_size 100;\n\
     }\n\
     location /directory {\n\
         root ./YoupiBanane;\n\
