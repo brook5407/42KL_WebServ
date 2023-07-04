@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/13 15:50:21 by chchin            #+#    #+#             */
-/*   Updated: 2023/07/01 23:17:39 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/04 11:30:30 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -132,6 +132,10 @@ size_t Server::getMaxBodySize() const {
     return (this->_maxBodySize);
 }
 
+std::vector<Location> &Server::getRoutes() {
+    return (this->_routes);
+}
+
 std::ostream& operator<<(std::ostream& os, const Server& server) {
     for (std::vector<std::string>::const_iterator it = server._names.begin(); it != server._names.end(); it++) {
         os << "Server name: " << *it << std::endl;
@@ -179,9 +183,4 @@ bool Server::checkIP(std::string IP)
             return (false);
     }
     return (true);
-}
-
-std::vector<Location> &Server::getRoutes()
-{
-    return (_routes);
 }

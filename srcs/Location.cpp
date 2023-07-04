@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/13 15:50:01 by chchin            #+#    #+#             */
-/*   Updated: 2023/07/02 17:11:28 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/04 23:09:23 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@ Location::Location()
 {
     this->_isRedirected = false;
     this->_autoIndex = false;
+    this->_maxBodySize = 0;
 }
 
 Location::~Location()
@@ -88,6 +89,28 @@ void Location::setCgiPath(std::string extension, std::string path)
     this->_cgiPath[extension] = path;
 }
 
+void Location::setMaxBodySize(std::string size)
+{
+    size_t last_pos = size.size() - 1;
+    if (size == "0")
+        throw ParserError("max body size in location couldn't be zero", size);
+    for (size_t i = 0; i < last_pos; i++)
+    {
+        if (!std::isdigit(size[i]))
+            throw ParserError("Invalid max body size in location", size);
+    }
+    if (size[last_pos] == 'k' || size[last_pos] == 'K')
+        this->_maxBodySize = ft_stoi(size.substr(0, last_pos)) * 1000;
+    else if (size[last_pos] == 'm' || size[last_pos] == 'M')
+        this->_maxBodySize = ft_stoi(size.substr(0, last_pos)) * 1000000;
+    else if (size[last_pos] == 'g' || size[last_pos] == 'G')
+        this->_maxBodySize = ft_stoi(size.substr(0, last_pos)) * 1000000000;
+    else if (std::isdigit(size[last_pos]))
+        this->_maxBodySize = ft_stoi(size);
+    else
+        throw ParserError("Invalid max body size in location", size);
+}
+
 std::string Location::getPrefix() const
 {
     return (this->_prefix);
@@ -138,6 +161,11 @@ std::string Location::getCgiPath(std::string extension) const
         return ("");
 } 
 
+size_t Location::getMaxBodySize() const
+{
+    return (this->_maxBodySize);
+}
+
 std::ostream &operator<<(std::ostream &out, const Location &location)
 {
     out << "Prefix: " << location._prefix << std::endl;
@@ -146,6 +174,7 @@ std::ostream &operator<<(std::ostream &out, const Location &location)
     for (std::set<std::string>::iterator it = location._methods.begin(); it != location._methods.end(); it++)
         out << *it << " ";
     out << std::endl;
+    out << "Max body size: " << location._maxBodySize << std::endl;
     out << "Index page: ";
     for (std::vector<std::string>::const_iterator it = location._index.begin(); it != location._index.end(); it++)
         out << *it << " ";

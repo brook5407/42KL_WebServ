@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 10:04:51 by chchin            #+#    #+#             */
-/*   Updated: 2023/07/01 23:10:27 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/04 10:20:15 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,7 @@ class Location {
 		bool								_autoIndex;
 		std::pair<int, std::string>			_redirection;
 		bool								_isRedirected;
+		size_t								_maxBodySize;
 		std::vector<std::string>			_cgiExtension;
 		std::map<std::string, std::string>	_cgiPath;
 
@@ -47,6 +48,7 @@ class Location {
 		void	setRedirection(std::string code, std::string url);
 		void	setCgiExtension(std::string extension);
 		void	setCgiPath(std::string extension, std::string path);
+		void	setMaxBodySize(std::string size);
 
 		std::string 			getPrefix() const;
 		std::string 			getRoot() const;
@@ -57,6 +59,7 @@ class Location {
 		bool 					checkRedirection() const;
 		bool					checkCgiExtension(std::string extension) const;
 		std::string				getCgiPath(std::string extension) const;
+		size_t					getMaxBodySize() const;
 
 		friend class ParserError;
 
