@@ -10,6 +10,7 @@ int main(int argc, char **argv)
             config_filepath = argv[1];
         else if (argc > 2)
             throw std::invalid_argument("usage: webserv <conf_file>");
+        srand(time(NULL));
         Webserver webserver(config_filepath);
         webserver.loop();
         return EXIT_SUCCESS;

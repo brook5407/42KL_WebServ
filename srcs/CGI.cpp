@@ -132,7 +132,7 @@ int		CGI::is_timeout(int timeout)
 
 void	CGI::response(void)
 {
-	_response.send_cgi_fd(file_out_fd);
+	_response.send_cgi_fd(file_out_fd, _session_id);
 	// _response.send_content(get_output());
 	// _response.end();
 }

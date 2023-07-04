@@ -275,35 +275,42 @@ class SessionHandler : public Middleware
     public:
         void execute(Request &req, Response &res)
         {
-            current_session_ID = extract_cookie(req._headers["Cookie"]);
+            current_session_ID = extract_cookie(req._headers["Cookie"], "ID");
             if (current_session_ID.empty())
             {
-                current_session_ID = "Random";
-                // current session id lost when cgi exit
+                current_session_ID = to_string(rand());
                 res.set_header("Set-Cookie", "ID=" + current_session_ID);
             }
             Middleware::execute(req, res);
         }
 
-        std::string get_session()
+        const std::string &get_session()
         {
             return _session[current_session_ID];
         }
 
-        std::string extract_cookie(const std::string &cookie_value)
+        const std::string &get_session_id() const
         {
-            // parse here
-            (void) cookie_value;
-            return "";
+            return current_session_ID;
         }
 
-        void set_session(const std::string &new_value)
+        std::string extract_cookie(const std::string &cookies, const std::string &cookie_name)
         {
-            _session[current_session_ID] = new_value;
+            std::size_t begin = cookies.find(cookie_name + "=");
+            if (begin == std::string::npos)
+                return std::string();
+            begin =+ cookie_name.size() + 1;
+            std::size_t end = cookies.find(';', begin);
+            const std::string cookie_value = cookies.substr(begin, end - begin);
+            return cookie_value;
+        }
+
+        void set_session(const std::string &session_id, const std::string &new_value)
+        {
+            _session[session_id] = new_value;
         }
 
 
-        // current session id lost when cgi exit
         std::string current_session_ID;
         std::map<std::string, std::string> _session;
 };
@@ -330,6 +337,7 @@ class CgiRunner: public Middleware
                     is_CGI = true;
                     _CGI.push_back(CGI(res));
                     CGI &cgi = _CGI.back();
+                    cgi.set_session_id(Singleton<SessionHandler>::get_instance()->get_session_id());
                     // char **envp = environ;
                     // while (*envp)
                     //     cgi.add_envp(*envp++);

@@ -38,6 +38,12 @@ class CGI
 			}
 			_envp.push_back(key + "=" + value);
 		}
+
+		void	set_session_id(const std::string &id)
+		{
+			_session_id = id;
+		}
+
 		class CGIException : public std::exception
 		{
 			public:
@@ -65,6 +71,8 @@ class CGI
 		int							file_in_fd;
 		int							file_out_fd;
 		std::vector<std::string>	_envp;
+		std::string					_session_id;
+		//add CGI variable here
 
 };
 

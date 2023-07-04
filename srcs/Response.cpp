@@ -67,7 +67,7 @@ void Response::send_file(int status_code, const std::string &filepath)
     end(ss);
 }
 
-void Response::send_cgi_fd(int fd)
+void Response::send_cgi_fd(int fd, const std::string &session_id)
 {
     char header[8192];
     off_t fsize = lseek(fd, 0, SEEK_END);
@@ -102,7 +102,7 @@ void Response::send_cgi_fd(int fd)
             break;
         if (cgi_line.find(session_key) == 0)
         {
-            Singleton<SessionHandler>::get_instance()->set_session(cgi_line.erase(0, sizeof(session_key)));
+            Singleton<SessionHandler>::get_instance()->set_session(session_id, cgi_line.erase(0, sizeof(session_key)));
             continue;
         }
         else
