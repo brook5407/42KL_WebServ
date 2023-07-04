@@ -133,7 +133,7 @@ Request::Request(const std::string &request)
 
 void Request::find_location_config(std::vector<Server> &_serverConfigs)
 {
-    this->_server_config = &_serverConfigs[0]; //first server config as default
+    this->_server_config = &_serverConfigs.at(0); //first server config as default
     if (this->_headers.count("Host"))
     {
         const std::size_t pos = this->_headers["Host"].find(":");
@@ -193,6 +193,7 @@ void Request::find_location_config(std::vector<Server> &_serverConfigs)
         route.erase(pos);
     }
     // default to Location /
+    this->_location_config = &locations.at(0);
 }
 
 std::string url_decode(const std::string &value)
