@@ -95,7 +95,7 @@ void Response::send_cgi_fd(int fd, const std::string &session_id)
     add_header(ss, 200); // todo status from stdout
     size_t cont_length = fsize - header_size;
     ss << "Content-Length: " << cont_length << "\r\n";
-    std::stringstream cgi_ss(header);
+    std::stringstream cgi_ss(std::string(header, read_size));
     std::string cgi_line;
     // char session_key[] = "X-Replace-Session:";
     while (std::getline(cgi_ss, cgi_line))
