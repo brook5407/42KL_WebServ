@@ -97,22 +97,18 @@ void Response::send_cgi_fd(int fd, const std::string &session_id)
     ss << "Content-Length: " << cont_length << "\r\n";
     std::stringstream cgi_ss(header);
     std::string cgi_line;
-    char session_key[] = "X-Replace-Session:";
+    // char session_key[] = "X-Replace-Session:";
     while (std::getline(cgi_ss, cgi_line))
     {
         if (cgi_line.empty() || cgi_line[0] == '\r')
             break;
-        if (cgi_line.find(session_key) == 0)
-        {
-            Singleton<SessionHandler>::get_instance()->set_session(session_id, cgi_line.erase(0, sizeof(session_key)));
+        if (Singleton<SessionHandler>::get_instance()->parse_session(session_id, cgi_line) == true)
             continue;
-        }
         else
             ss << cgi_line << "\n";
     }
-    if (header_size == 0)
-        ss << "\r\n";
-    lseek(fd, 0, SEEK_SET);
+    ss << "\r\n";
+    lseek(fd, header_size, SEEK_SET);
     _connection._in_fd = fd;
     end(ss);
     // std::cout << "send fd " << _fd << " sz:" << fsize << std::endl;

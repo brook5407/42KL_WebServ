@@ -36,3 +36,14 @@ void SessionHandler::set_session(const std::string &session_id, const std::strin
 {
 	_session[session_id] = new_value;
 }
+
+bool SessionHandler::parse_session(const std::string &session_id, const std::string &cgi_response_header)
+{
+	char session_key[] = "X-Replace-Session:";
+	if (cgi_response_header.find(session_key) == 0)
+	{
+		set_session(session_id, cgi_response_header.substr(sizeof(session_key)));
+		return true;
+	}
+	return false;
+}

@@ -114,6 +114,6 @@ server {\n\
         autoindex on;\n\
         add_cgi .sh /bin/sh;\n\
         add_cgi .cgi ./;\n\
-        add_cgi .pl /usr/local/bin/python3;\n\
+        add_cgi .py /usr/bin/python3;\n\
     }\n\
 }" > YoupiBanane.conf
