@@ -9,13 +9,14 @@
 #include "StaticFileHandler.hpp"
 #include "UploadHandler.hpp"
 #include "LimitRequestBodyHandler.hpp"
+#include "SessionHandler.hpp"
 
 static void add_handler(Middleware *pipeline, Middleware *middleware);
 
 Pipeline::Pipeline()
 {
     add_handler(this, Singleton<ErrorHandler>::get_instance());
-    // add_handler(this, Singleton<SessionHandler>::get_instance());
+    add_handler(this, Singleton<SessionHandler>::get_instance());
     add_handler(this, Singleton<Logger>::get_instance());
     add_handler(this, Singleton<KeepAliveHandler>::get_instance());
     add_handler(this, Singleton<AllowMethodHandler>::get_instance());

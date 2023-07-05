@@ -27,17 +27,9 @@ class CGI
 		void	setup_bash(const std::string &handler, const std::string &script, const std::string &body);
 		void	response(void);
 		int		is_timeout(int timeout);
-		void	add_envp(std::string key, const std::string &value)
-		{
-			for (size_t i = 0; i < key.size(); ++i)
-			{
-				if (key[i] == '-')
-					key[i] = '_';
-				else
-					key[i] = std::toupper(key[i]);
-			}
-			_envp.push_back(key + "=" + value);
-		}
+		void	add_envp(std::string key, const std::string &value);
+		void	set_session_id(const std::string &id);
+
 		class CGIException : public std::exception
 		{
 			public:
@@ -65,6 +57,7 @@ class CGI
 		int							file_in_fd;
 		int							file_out_fd;
 		std::vector<std::string>	_envp;
+		std::string					_session_id;
 
 };
 

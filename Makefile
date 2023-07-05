@@ -5,12 +5,12 @@ OBJFILES	:= webserv.o Webserver.o \
 				Middleware.o Pipeline.o ErrorHandler.o \
 				AllowMethodHandler.o AutoIndexHandler.o CGIHandler.o CGI.o \
 				IndexHandler.o RedirectHandler.o StaticFileHandler.o UploadHandler.o \
-				LimitRequestBodyHandler.o
+				LimitRequestBodyHandler.o SessionHandler.o
 
 DEPFILES	:= $(OBJFILES:.o=.d)
 # ASAN		:= -fsanitize=address
 CXXFLAGS	:= -Wall -Wextra -Werror -Wshadow -std=c++98 -MMD $(ASAN) -Isrcs -Isrcs/middlewares
-CXXFLAGS  	+= -O3 -flto
+# CXXFLAGS  	+= -O3 -flto
 # CXXFLAGS  	+= -g3
 LDLIBS		:= -lstdc++ $(ASAN)
 VPATH		:= srcs srcs/middlewares

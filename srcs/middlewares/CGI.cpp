@@ -4,7 +4,9 @@
 CGI::CGI(Response response)
 : child_pid(-1), _response(response),
 file_in(NULL), file_out(NULL), file_in_fd(-1), file_out_fd(-1)
-{ }
+{
+	_response._connection.status() = WAITING;
+}
 
 CGI::~CGI()
 {
@@ -132,7 +134,7 @@ int		CGI::is_timeout(int timeout)
 
 void	CGI::response(void)
 {
-	_response.send_cgi_fd(file_out_fd);
+	_response.send_cgi_fd(file_out_fd, _session_id);
 	// _response.send_content(get_output());
 	// _response.end();
 }
@@ -145,4 +147,21 @@ char	**CGI::convert_envp(const std::vector<std::string> &vec)
 		array[i] = const_cast<char*>(vec[i].c_str());
 	array[vec.size()] = NULL;
 	return (array);
+}
+
+void	CGI::set_session_id(const std::string &id)
+{
+	_session_id = id;
+}
+
+void	CGI::add_envp(std::string key, const std::string &value)
+{
+	for (size_t i = 0; i < key.size(); ++i)
+	{
+		if (key[i] == '-')
+			key[i] = '_';
+		else
+			key[i] = std::toupper(key[i]);
+	}
+	_envp.push_back(key + "=" + value);
 }

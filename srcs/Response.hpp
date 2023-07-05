@@ -21,10 +21,15 @@ class Response
         void send_location(int status_code, const std::string &location);
         void send_content(int status_code, const std::string &data, const std::string &type = "text/html");
         void send_file(int status_code, const std::string &filepath);
-        void send_cgi_fd(int fd);
+        void send_cgi_fd(int fd, const std::string &session_id);
         void set_keep_alive(bool keep_alive);
+        void set_header(const std::string &key, const std::string &value)
+        {
+            _headers[key] = value;
+        }
 
         Connection &_connection;
+        std::map<std::string, std::string> _headers;
     private:
         Configuration &_configuration;
 

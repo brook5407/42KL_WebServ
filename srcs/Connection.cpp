@@ -34,12 +34,12 @@ char _buffer[BUFFER_SIZE] = {};
 void Connection::read()
 {
     _last_activity = time(NULL);
-    if (_status != READING)
-    {
-        std::cout << "invalid status, expected READING. request-size:" << _in_buffer.size() << std::endl;
-        // throw std::runtime_error("invalid status, expected READING");
-        return;
-    }
+    // if (_status != READING)
+    // {
+    //     std::cout << "invalid status, expected READING. request-size:" << _in_buffer.size() << std::endl;
+    //     // throw std::runtime_error("invalid status, expected READING");
+    //     return;
+    // }
     // char buffer[BUFFER_SIZE] = {};
     int length = recv(_fd, _buffer, sizeof(_buffer), 0); //MSG_NOSIGNAL
     if (length < 1)
@@ -55,11 +55,11 @@ void Connection::read()
 
 void Connection::write(const std::string &data)
 {
-    if (_status != READING)
-    {
-        std::cout << "existing " << _out_buffer << std::endl << "===" << data << std::endl;
-        throw std::runtime_error("invalid status, expected READING ");
-    }
+    // if (_status != READING)
+    // {
+    //     std::cout << "existing " << _out_buffer << std::endl << "===" << data << std::endl;
+    //     throw std::runtime_error("invalid status, expected READING ");
+    // }
     _out_buffer += data;
     _status = SENDING;
 }

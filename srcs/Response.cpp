@@ -1,4 +1,6 @@
 #include "Response.hpp"
+#include "Singleton.hpp"
+#include "SessionHandler.hpp"
 
 void Response::send_location(int status_code, const std::string &location)
 {
@@ -65,7 +67,7 @@ void Response::send_file(int status_code, const std::string &filepath)
     end(ss);
 }
 
-void Response::send_cgi_fd(int fd)
+void Response::send_cgi_fd(int fd, const std::string &session_id)
 {
     char header[8192];
     off_t fsize = lseek(fd, 0, SEEK_END);
@@ -91,7 +93,23 @@ void Response::send_cgi_fd(int fd)
     }
     std::stringstream ss;
     add_header(ss, 200); // todo status from stdout
-    ss << "Content-Length: " << fsize - header_size << "\r\n";
+    size_t cont_length = fsize - header_size;
+    ss << "Content-Length: " << cont_length << "\r\n";
+    std::stringstream cgi_ss(header);
+    std::string cgi_line;
+    char session_key[] = "X-Replace-Session:";
+    while (std::getline(cgi_ss, cgi_line))
+    {
+        if (cgi_line.empty() || cgi_line[0] == '\r')
+            break;
+        if (cgi_line.find(session_key) == 0)
+        {
+            Singleton<SessionHandler>::get_instance()->set_session(session_id, cgi_line.erase(0, sizeof(session_key)));
+            continue;
+        }
+        else
+            ss << cgi_line << "\n";
+    }
     if (header_size == 0)
         ss << "\r\n";
     lseek(fd, 0, SEEK_SET);
@@ -112,8 +130,8 @@ void Response::add_header(std::stringstream &ss, int status_code)
         ss << "Connection: keep-alive\r\n";
     else
         ss << "Connection: close\r\n";
-    // for (std::map<std::string, std::string>::iterator it = _headers.begin(); it != _headers.end(); ++it)
-    //     ss << it->first << ": " << it->second << "\r\n";
+    for (std::map<std::string, std::string>::iterator it = _headers.begin(); it != _headers.end(); ++it)
+        ss << it->first << ": " << it->second << "\r\n";
 }
 
 void Response::end(std::stringstream &ss)
