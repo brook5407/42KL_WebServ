@@ -35,13 +35,16 @@ class Middleware
         Middleware *_next;
 
         // add check file function here
-        bool	file_exists(std::string &filepath)
+        bool	file_exists(const std::string &filepath)
         {
 	        std::ifstream	file(filepath.c_str());
 	        return file.good();
         }
+        // struct stat sb;
+        // stat(req._script_name.c_str(), &sb) == 0 && S_ISREG(sb.st_mode)
 
-        bool   file_executable(std::string &filepath)
+
+        bool   file_executable(const std::string &filepath)
         {
             return (access(filepath.c_str(), X_OK) == 0);
         }

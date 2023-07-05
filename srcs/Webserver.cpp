@@ -155,9 +155,9 @@ void Webserver::_loop_sockets(t_listen_sockets &listen_sockets)
                 std::cout << "accept from " << *it << std::endl;
                 continue;
             }
-            #if __APPLE__ && __MACH__
+            // #if __APPLE__ && __MACH__
             fcntl(fd, F_SETFL, O_NONBLOCK);
-            #endif
+            // #endif
             connections.push_back(Connection(fd));
             // std::cout << "accepted " << connections.back() << std::endl;
         }

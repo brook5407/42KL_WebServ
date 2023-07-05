@@ -2,8 +2,7 @@
 
 void StaticFileHandler::execute(Request &req, Response &res)
 {
-    struct stat sb;
-    if (stat(req._script_name.c_str(), &sb) == 0 && S_ISREG(sb.st_mode))
+    if (file_exists(req._script_name))
         res.send_file(200, req._script_name);
     else
         throw HttpException(404, "Not found");
