@@ -8,10 +8,10 @@ OBJFILES	:= webserv.o Webserver.o \
 				LimitRequestBodyHandler.o SessionHandler.o
 
 DEPFILES	:= $(OBJFILES:.o=.d)
-# ASAN		:= -fsanitize=address
+ASAN		:= -fsanitize=address
 CXXFLAGS	:= -Wall -Wextra -Werror -Wshadow -std=c++98 -MMD $(ASAN) -Isrcs -Isrcs/middlewares
 # CXXFLAGS  	+= -O3 -flto
-# CXXFLAGS  	+= -g3
+CXXFLAGS  	+= -g3
 LDLIBS		:= -lstdc++ $(ASAN)
 VPATH		:= srcs srcs/middlewares
 PORT		:= 8080
