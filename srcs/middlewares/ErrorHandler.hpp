@@ -3,7 +3,6 @@
 
 # include "Middleware.hpp"
 
-// todo must check error file exist
 class ErrorHandler: public Middleware
 {
     public:

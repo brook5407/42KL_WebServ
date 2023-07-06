@@ -125,7 +125,9 @@ size_t Server::getPort() const {
 }
 
 std::string Server::getErrorPagePath(int code) const{
-    return (this->_errorPages.find(code)->second);
+    if (this->_errorPages.count(code))
+        return (this->_errorPages.find(code)->second);
+    return std::string();
 }
 
 size_t Server::getMaxBodySize() const {
