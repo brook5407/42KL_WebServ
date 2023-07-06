@@ -7,13 +7,14 @@ OBJFILES	:= webserv.o Webserver.o \
 				IndexHandler.o RedirectHandler.o StaticFileHandler.o UploadHandler.o \
 				LimitRequestBodyHandler.o SessionHandler.o
 
-DEPFILES	:= $(OBJFILES:.o=.d)
+OBJDIR		:= obj
+DEPFILES	:= $(OBJFILES:.o=.d) $(OBJFILES:%.o=$(OBJDIR)/%.d)
 ASAN		:= -fsanitize=address
 CXXFLAGS	:= -Wall -Wextra -Werror -Wshadow -std=c++98 -MMD $(ASAN) -Isrcs -Isrcs/middlewares
 # CXXFLAGS  	+= -O3 -flto
 CXXFLAGS  	+= -g3
 LDLIBS		:= -lstdc++ $(ASAN)
-VPATH		:= srcs srcs/middlewares
+VPATH		:= srcs srcs/middlewares $(OBJDIR)
 PORT		:= 8080
 
 ifeq ($(shell uname), Linux)
@@ -30,10 +31,11 @@ endif
 
 .PHONY: all clean fclean re test
 
-all: $(NAME)
+all: $(NAME) $(OBJDIR)
 
 clean:
 	$(RM) $(OBJFILES) $(DEPFILES)
+	rm -rf $(OBJDIR)
 
 fclean: clean
 	$(RM) $(NAME)
@@ -43,6 +45,10 @@ re: fclean all
 -include $(DEPFILES)
 
 $(NAME): $(OBJFILES)
+
+$(OBJDIR): $(OBJFILES)
+	mkdir -p $(OBJDIR)
+	mv *.d *.o $(OBJDIR)
 
 testx: $(NAME)
 	curl -H "Transfer-Encoding: chunked" -d "key=value&name=text" localhost:8080 -v
