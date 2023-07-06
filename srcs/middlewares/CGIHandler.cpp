@@ -52,3 +52,37 @@ void CGIHandler::execute(Request &req, Response &res)
         return;
     }
 }
+
+void CGIHandler::timeout(size_t execution_timeout_sec)
+{
+    // just set response to 502
+    // select blocks, this function is read only after select times out
+    // for convenience is_timeout and select timeout should be the same
+    for (std::list<CGI>::iterator it = _CGI.begin(); it != _CGI.end();)
+    {
+        if (it->is_timeout(execution_timeout_sec))
+        {
+            it->_response.send_content(502, "Process has timed out");
+            kill(it->child_pid, SIGKILL);
+            it = _CGI.erase(it);
+        }
+        else
+            ++it;
+    }
+}
+
+// verify kill server, kill cgi
+void CGIHandler::handle_exit(pid_t pid, int status)
+{
+    (void) status;
+    for (std::list<CGI>::iterator it = _CGI.begin(); it != _CGI.end(); ++it)
+    {
+        if (it->child_pid == pid)
+        {
+            //todo: delay and split reading stdout for responsiveness
+            it->response(); //todo check error 500 if error/empty, timeout not here but loop_soket()
+            _CGI.erase(it); // remove done CGI
+            break;
+        }
+    }
+}

@@ -84,21 +84,7 @@ void Webserver::_loop_sockets(t_listen_sockets &listen_sockets)
             max_fd = std::max(max_fd, *it);
         }
 
-        // just set response to 502
-        // select blocks, this function is read only after select times out
-        // for convenience is_timeout and select timeout should be the same
-        for (std::list<CGI>::iterator it = Singleton<CGIHandler>::get_instance()->_CGI.begin();
-            it != Singleton<CGIHandler>::get_instance()->_CGI.end();)
-        {
-            if (it->is_timeout(300))
-            {
-                it->_response.send_content(502, "Process has timed out");
-                kill(it->child_pid, SIGKILL);
-                it = Singleton<CGIHandler>::get_instance()->_CGI.erase(it);
-            }
-            else
-                ++it;
-        }
+        Singleton<CGIHandler>::get_instance().timeout(300);
     
         for (t_connections::iterator it = connections.begin(); it != connections.end();)
         {
@@ -189,35 +175,15 @@ int Webserver::_create_listen_socket(const char *address_str, int port)
     return (listen_socket);
 }
 
-// todo from pid get CGI object & connection object.
-//   maybe map<pid, object>
-// verify kill server, kill cgi
-// remove done cgi (as well as destroy)
 void Webserver::_on_cgi_exit(int)
 {
     int status;
     pid_t pid;
-    if (_instance == NULL)
-    {
-        std::cout << "Server exited" << std::endl;
-    }
-    CGIHandler  &runner = *(Singleton<CGIHandler>::get_instance());
-    std::list<CGI>::iterator it;
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
     {
         std::cout << "pid " << pid << " exited with status " << status << std::endl;
-
-        for (it = runner._CGI.begin(); it != runner._CGI.end(); ++it)
-        {
-            if (it->child_pid == pid)
-            {
-                //todo: ctrl+c curl trigger heap-use-after-free, due to removed Connection
-                //todo: delay and split reading stdout for responsiveness
-                it->response(); //todo check error 500 if error/empty, timeout not here but loop_soket()
-                runner._CGI.erase(it); // remove done CGI
-                break;
-            }
-        }
+        if (_instance)
+            Singleton<CGIHandler>::get_instance().handle_exit(pid, status);
     }
 }
 
