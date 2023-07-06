@@ -45,21 +45,15 @@ re: fclean all
 $(NAME): $(OBJFILES)
 
 testx: $(NAME)
-	./$(NAME) $(PORT)&
-	@sleep 1
-	curl localhost:$(PORT)
 	curl -H "Transfer-Encoding: chunked" -d "key=value&name=text" localhost:8080 -v
 	curl -H "Transfer-Encoding: chunked" -H "Content-Disposition: attachment; filename=\"filename.png\"" --data-binary @Makefile localhost:8080 -v
 	curl -v -F key1=value1 -F upload=@Makefile localhost:9999 -v
 	@echo PING | nc localhost $(PORT)
-	@echo PONG | nc localhost $(PORT)
-	@printf "" | nc localhost $(PORT)
-	@# pkill $(NAME)
 
-test: $(NAME) tester test_dir test_conf
-	- pkill $(NAME)
+test: $(NAME) tester test_dir test_conf test_cases
+	pkill $(NAME) || true
 	./$(NAME) YoupiBanane.conf 2>&1 > webserv.log &
-	time ./tester http://localhost:$(PORT) || time ./ubuntu_tester http://localhost:$(PORT) || ./ubuntu_tester http://localhost:$(PORT)
+	time ./tester http://localhost:$(PORT) || bash -c "time ./ubuntu_tester http://localhost:$(PORT)"
 
 tester:
 	curl -LO https://cdn.intra.42.fr/document/document/17624/tester
@@ -117,3 +111,30 @@ server {\n\
         add_cgi .py /usr/bin/python3;\n\
     }\n\
 }" > YoupiBanane.conf
+
+test_cases:
+	./$(NAME) no_extension 2>&1 | grep "Wrong file extension"
+	./$(NAME) missing_file.conf 2>&1 | grep "Cannot open file"
+	./$(NAME) test/no_server.conf 2>&1 | grep "No server in the configuration file"
+	./$(NAME) test/no_ip.conf 2>&1 | grep "No ip in the configuration file"
+	./$(NAME) test/no_root.conf 2>&1 | grep "No root in the configuration file"
+	./$(NAME) test/invalid_location.conf 2>&1 | grep "Invalid prefix in location"
+	./$(NAME) test/conflict_port.conf 2>&1 |grep "Address already in use"
+
+	(pkill $(NAME) || true) && screen -dm ./$(NAME) test/location.conf && sleep 1 \
+	&& curl -s -o - localhost:8080 | grep 404 \
+
+	(pkill $(NAME) || true) && screen -dm ./$(NAME) test/multi_server.conf && sleep 1 \
+	&& curl -s -o - --resolve host0.com:8080:127.0.0.1 host0.com:8080 | grep one \
+	&& curl -s -o - --resolve host1.com:8080:127.0.0.1 host1.com:8080 | grep one \
+	&& curl -s -o - --resolve host2.com:8080:127.0.0.1 host2.com:8080 | grep two \
+	&& curl -s -o - --resolve host2.org:8080:127.0.0.1 host2.org:8080 | grep two \
+	&& curl -s -o - --resolve host3.com:8081:127.0.0.1 host3.com:8081 | grep three \
+	&& curl -s -o - --resolve host3.org:8081:127.0.0.1 host3.org:8081 | grep three \
+	&& curl -s -o - --resolve host3.com:8080:127.0.0.1 host3.com:8080 | grep one \
+
+	(pkill $(NAME) || true) && screen -dm ./$(NAME) test/redirect.conf && sleep 1 \
+	&& curl -v localhost:8080 2>&1 | grep 301 \
+	&& curl -v localhost:8080 2>&1 | grep banana \
+	&& curl -v localhost:8080/b 2>&1 | grep 302 \
+	&& curl -v localhost:8080/b 2>&1 | grep durian \
