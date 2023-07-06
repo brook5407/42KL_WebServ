@@ -18,7 +18,7 @@ void CGIHandler::execute(Request &req, Response &res)
 
         _CGI.push_back(CGI(res));
         CGI &cgi = _CGI.back();
-        cgi.set_session_id(Singleton<SessionHandler>::get_instance()->get_session_id());
+        cgi.set_session_id(Singleton<SessionHandler>::get_instance().get_session_id());
         // char **envp = environ;
         // while (*envp)
         //     cgi.add_envp(*envp++);
@@ -26,7 +26,7 @@ void CGIHandler::execute(Request &req, Response &res)
         cgi.add_envp("SERVER_PROTOCOL", "HTTP/1.1");
         cgi.add_envp("PATH_INFO", req._uri);
         cgi.add_envp("QUERY_STRING", req._search);
-        cgi.add_envp("HTTP_SESSION", Singleton<SessionHandler>::get_instance()->get_session());
+        cgi.add_envp("HTTP_SESSION", Singleton<SessionHandler>::get_instance().get_session());
 
         // cgi.add_envp("CONTENT_LENGTH", to_string(req._content_length));
         // cgi.add_envp("CONTENT_TYPE", req._headers["Content-Type"]);

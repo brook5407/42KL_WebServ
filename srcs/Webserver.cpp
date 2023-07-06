@@ -50,7 +50,7 @@ void Webserver::_process_request(Connection &connection)
     if (!request.is_ready)
         return;
     request.find_location_config(_serverConfigs);
-    Response response(connection, _configuration);
+    Response response(connection);
    _pipeline.execute(request, response);
 }
 

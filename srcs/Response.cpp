@@ -1,6 +1,13 @@
 #include "Response.hpp"
 #include "Singleton.hpp"
 #include "SessionHandler.hpp"
+#include "Configuration.hpp"
+
+Response::Response(Connection &connection)
+: _connection(connection), _configuration(Singleton<Configuration>::get_instance()) {}
+
+Response::Response(Response const &src)
+: _connection(src._connection), _headers(src._headers), _configuration(src._configuration) {}
 
 void Response::send_location(int status_code, const std::string &location)
 {
@@ -103,7 +110,7 @@ void Response::send_cgi_fd(int fd, const std::string &session_id)
     {
         if (cgi_line.empty() || cgi_line[0] == '\r')
             break;
-        if (Singleton<SessionHandler>::get_instance()->parse_session(session_id, cgi_line) == true)
+        if (Singleton<SessionHandler>::get_instance().parse_session(session_id, cgi_line) == true)
             continue;
         else
             ss << cgi_line << "\n";

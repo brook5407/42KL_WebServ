@@ -5,7 +5,6 @@
 #define POLL_TIMEOUT_SEC 5
 #define CONNECTION_TIMEOUT_SEC 300
 
-#include "Configuration.hpp"
 #include "Pipeline.hpp"
 #include "Connection.hpp"
 #include "Server.hpp"
@@ -25,7 +24,6 @@ private:
     
     static Webserver *_instance;
 
-    Configuration _configuration;
     Pipeline _pipeline;
     std::vector<Server> _serverConfigs;
 

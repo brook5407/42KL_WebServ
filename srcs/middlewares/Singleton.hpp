@@ -4,10 +4,10 @@
 template <typename T>
 struct Singleton
 {
-    static T *get_instance()
+    static T &get_instance()
     {
         static T instance;
-        return &instance;
+        return instance;
     }
 };
 
