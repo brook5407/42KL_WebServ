@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/20 10:12:24 by chchin            #+#    #+#             */
-/*   Updated: 2023/07/04 23:04:20 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/06 11:18:39 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,9 @@
 ConfigParser::ConfigParser(std::string configFile)
 {
     std::ifstream   file(configFile.c_str());
+    //check last 4 char of config file
+    if (configFile.size() < 5 || configFile.substr(configFile.size() - 5) != ".conf")
+        throw ParserError("Wrong file extension", configFile);
     if (file)
     {
         std::stringstream   buffer;
@@ -26,6 +29,8 @@ ConfigParser::ConfigParser(std::string configFile)
         file.close();
         std::string str = buffer.str();
         std::vector<std::string> config = ft_split(str, "\r\n");
+        if (!config.size())
+            throw ParserError("Empty file", configFile);
         parseConfig(config);
     }
     else
@@ -86,6 +91,8 @@ void ConfigParser::parseServer(conf_t &line_pos, conf_t end)
                 continue;
             }
         }
+         else if (*line_pos->rbegin() != ';')
+            throw ParserError("Line must end with semicolon", *line_pos);
         else if (line[0] == "listen")
         {
             if (line.size() != 2)
@@ -231,6 +238,9 @@ Location ConfigParser::parseLocation(conf_t &line_pos, conf_t end)
 void ConfigParser::checkServer()
 {
     std::vector<Server>::iterator it_s;
+
+    if (_servers.size() == 0)
+        throw ParserError("No server in the configuration file", "server {}");
     
     for (it_s = _servers.begin(); it_s != _servers.end(); it_s++)
     {

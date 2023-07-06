@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/13 15:50:01 by chchin            #+#    #+#             */
-/*   Updated: 2023/07/04 23:09:23 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/06 11:23:24 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,8 @@ Location::~Location()
 
 void Location::setPrefix(std::string prefix)
 {
-    this->_prefix = prefix;
+    if (prefix[0] != '/')
+        throw ParserError("Invalid prefix in location", prefix);
 }
 
 void Location::setRoot(std::string path)
