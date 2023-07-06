@@ -2,7 +2,7 @@
 
 void RedirectHandler::execute(Request &req, Response &res)
 {
-    if (req._location_config->getRedirection().first)
+    if (req._location_config->checkRedirection())
     {
         res.send_location(
             req._location_config->getRedirection().first,

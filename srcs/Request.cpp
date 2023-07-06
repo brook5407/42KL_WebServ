@@ -133,6 +133,8 @@ Request::Request(const std::string &request)
 
 void Request::find_location_config(std::vector<Server> &_serverConfigs)
 {
+    static Location default_location;
+
     this->_server_config = &_serverConfigs.at(0); //first server config as default
     if (this->_headers.count("Host"))
     {
@@ -193,7 +195,8 @@ void Request::find_location_config(std::vector<Server> &_serverConfigs)
         route.erase(pos);
     }
     // default to Location /
-    this->_location_config = &locations.at(0);
+    this->_location_config = &default_location; // will be method-not-allowed
+    default_location.setMethod("GET"); // use 404 instead of method-not-allowed
 }
 
 std::string url_decode(const std::string &value)

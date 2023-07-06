@@ -4,6 +4,8 @@ void ErrorHandler::execute(Request &req, Response &res)
 {
     try
     {
+        if (!req._location_config->checkRedirection() && req._script_name.empty())
+            throw HttpException(404, "no location matched");
         Middleware::execute(req, res);
     }
     catch (const HttpException &e)

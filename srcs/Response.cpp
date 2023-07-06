@@ -5,8 +5,9 @@
 void Response::send_location(int status_code, const std::string &location)
 {
     std::stringstream ss;
-    add_header(ss, status_code);
-    ss << "Location: " << location << "\r\n\r\n";
+    ss << "Location: " << location << "\r\n"
+        "Content-Length: 0\r\n"
+        "\r\n";
     end(ss);
 }
 
