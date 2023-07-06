@@ -55,7 +55,10 @@ class Middleware
 
         std::string get_extension(const std::string &path)
         {
-            return path.substr(path.find_last_of('.'));
+            std::size_t pos = path.find_last_of('.');
+            if (pos == std::string::npos)
+                return std::string();
+            return path.substr(pos);
         }
 
         std::string combine_path(const std::string &path1, const std::string &path2)
@@ -82,11 +85,11 @@ class Logger: public Middleware
     public:
         void execute(Request &req, Response &res)
         {
-            if (req._body.size())
-            {
-                std::ofstream ofs("body.log", std::ios::out | std::ios::trunc | std::ios::binary);
-                ofs << req._body;   
-            }
+            // if (req._body.size())
+            // {
+            //     std::ofstream ofs("body.log", std::ios::out | std::ios::trunc | std::ios::binary);
+            //     ofs << req._body;   
+            // }
             Middleware::execute(req, res);
         }
 };
