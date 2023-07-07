@@ -1,4 +1,5 @@
 #include "UploadHandler.hpp"
+#include "HttpException.hpp"
 #include <iostream>
 
 static std::string get_filename(const std::string &Content_disposition);

@@ -1,4 +1,5 @@
 #include "AllowMethodHandler.hpp"
+#include "HttpException.hpp"
 
 void AllowMethodHandler::execute(Request &req, Response &res)
 {

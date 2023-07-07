@@ -3,7 +3,6 @@
 
 #include "Request.hpp"
 #include "Response.hpp"
-#include "HttpException.hpp"
 
 #include <string>
 #include <fstream>

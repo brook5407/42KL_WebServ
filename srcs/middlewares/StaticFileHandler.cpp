@@ -1,4 +1,5 @@
 #include "StaticFileHandler.hpp"
+#include "HttpException.hpp"
 
 void StaticFileHandler::execute(Request &req, Response &res)
 {

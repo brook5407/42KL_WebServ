@@ -1,4 +1,5 @@
 #include "LimitRequestBodyHandler.hpp"
+#include "HttpException.hpp"
 
 void LimitRequestBodyHandler::execute(Request &req, Response &res)
 {

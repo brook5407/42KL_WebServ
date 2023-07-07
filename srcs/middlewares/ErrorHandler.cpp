@@ -1,6 +1,7 @@
 #include "ErrorHandler.hpp"
 #include "Singleton.hpp"
-#include "Configuration.hpp"
+#include "HttpException.hpp"
+#include "ReasonPhrase.hpp"
 
 static void generate_html(std::stringstream &ss, int status_code, std::string reason);
 
