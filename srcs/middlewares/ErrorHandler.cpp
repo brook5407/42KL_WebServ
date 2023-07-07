@@ -21,7 +21,7 @@ void ErrorHandler::execute(Request &req, Response &res)
         }
         else
         {
-            std::string reason = Singleton<Configuration>::get_instance()._reason_phrase.at(e.status_code());
+            std::string reason = Singleton<ReasonPhrase>::get_instance().lookup(e.status_code());
             std::stringstream ss;
             generate_html(ss, e.status_code(), reason);
             res.send_content(e.status_code(), ss.str());

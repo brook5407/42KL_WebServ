@@ -1,11 +1,11 @@
 #ifndef RESPONSE_HPP
 #define RESPONSE_HPP
 
-#include "Configuration.hpp"
 #include "Connection.hpp"
 #include <sys/stat.h>
 #include <ctime>
 #include <algorithm>
+#include <map>
 
 class Response
 {
@@ -26,7 +26,6 @@ class Response
         Connection &_connection;
         std::map<std::string, std::string> _headers;
     private:
-        Configuration &_configuration;
 
         void add_header(std::stringstream &ss, int status_code);
         void end(std::stringstream &ss);

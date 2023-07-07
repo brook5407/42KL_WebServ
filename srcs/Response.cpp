@@ -1,13 +1,16 @@
 #include "Response.hpp"
 #include "Singleton.hpp"
 #include "SessionHandler.hpp"
-#include "Configuration.hpp"
+#include "MimeType.hpp"
+#include "ReasonPhrase.hpp"
 
 Response::Response(Connection &connection)
-: _connection(connection), _configuration(Singleton<Configuration>::get_instance()) {}
+: _connection(connection)
+{}
 
 Response::Response(Response const &src)
-: _connection(src._connection), _headers(src._headers), _configuration(src._configuration) {}
+: _connection(src._connection), _headers(src._headers)
+{}
 
 void Response::send_location(int status_code, const std::string &location)
 {
@@ -66,8 +69,7 @@ void Response::send_file(int status_code, const std::string &filepath)
         if (pos != std::string::npos)
         {
             std::string extension = filepath.substr(pos + 1);
-            if (_configuration._mime_types.count(extension))
-                content_type = _configuration._mime_types[extension];
+            content_type = Singleton<MimeType>::get_instance().lookup(extension.c_str());
         }
         ss << "Content-Type: " << content_type << "\r\n";
     }
@@ -129,7 +131,10 @@ void Response::set_keep_alive(bool keep_alive)
 
 void Response::add_header(std::stringstream &ss, int status_code)
 {
-    ss << "HTTP/1.1 " << status_code << ' ' << _configuration._reason_phrase[status_code] << "\r\n";
+    ss  << "HTTP/1.1 "
+        << status_code << ' '
+        << Singleton<ReasonPhrase>::get_instance().lookup(status_code)
+        << "\r\n";
     if (_connection.keep_alive())
         ss << "Connection: keep-alive\r\n";
     else
