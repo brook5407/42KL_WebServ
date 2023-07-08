@@ -1,5 +1,6 @@
 #include "UploadHandler.hpp"
 #include "HttpException.hpp"
+#include "Util.hpp"
 #include <iostream>
 
 static std::string get_filename(const std::string &Content_disposition);
@@ -43,7 +44,7 @@ void UploadHandler::execute(Request &req, Response &res)
             if (filename.empty())
                 throw HttpException(400, "Bad Request: filename not found");
             // save file
-            filename = combine_path(req._script_name, filename);
+            filename = Util::combine_path(req._script_name, filename);
             std::cout << "filename: " << filename << " sz:" << body.size() << std::endl;
             std::ofstream ofs(filename.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
             if (!ofs.is_open())
@@ -62,7 +63,7 @@ void UploadHandler::execute(Request &req, Response &res)
         //post /dir/<f> , /dir/filename/<f>,  w/wo:Content-Disposition
         std::string filename = get_filename(req._headers["Content-Disposition"]);
         if (filename.size())
-            filename = combine_path(req._script_name, filename); // prefix document root
+            filename = Util::combine_path(req._script_name, filename); // prefix document root
         else
             filename = req._script_name;
         save_file(filename, req._body);

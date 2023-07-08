@@ -1,11 +1,12 @@
 #include "SessionHandler.hpp"
+#include "Util.hpp"
 
 void SessionHandler::execute(Request &req, Response &res)
 {
 	current_session_ID = extract_cookie(req._headers["Cookie"], "ID");
 	if (current_session_ID.empty())
 	{
-		current_session_ID = to_string(rand());
+		current_session_ID = Util::to_string(rand());
 		res.set_header("Set-Cookie", "ID=" + current_session_ID);
 	}
 	Middleware::execute(req, res);

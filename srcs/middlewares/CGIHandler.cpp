@@ -1,12 +1,13 @@
 #include "CGIHandler.hpp"
 #include "Singleton.hpp"
 #include "SessionHandler.hpp"
+#include "Util.hpp"
 
 extern char **environ;
 
 void CGIHandler::execute(Request &req, Response &res)
 {
-    const std::string ext = get_extension(req._script_name);
+    const std::string ext = Util::get_extension(req._script_name);
     const std::string arg0 = req._location_config->getCgiPath(ext);
     if (arg0.empty())
         return Middleware::execute(req, res);

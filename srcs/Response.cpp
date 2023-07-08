@@ -64,13 +64,8 @@ void Response::send_file(int status_code, const std::string &filepath)
     }
 
     {
-        std::string content_type = "application/octet-stream";
-        std::size_t pos = filepath.find_last_of(".");
-        if (pos != std::string::npos)
-        {
-            std::string extension = filepath.substr(pos + 1);
-            content_type = Singleton<MimeType>::get_instance().lookup(extension.c_str());
-        }
+        const std::string extension = Util::get_extension(filepath);
+        const std::string content_type = Singleton<MimeType>::get_instance().lookup(extension);
         ss << "Content-Type: " << content_type << "\r\n";
     }
     ss << "\r\n";

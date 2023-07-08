@@ -1,6 +1,7 @@
 NAME		:= webserv
 OBJFILES	:= webserv.o Webserver.o \
-				Connection.o Request.o Response.o \
+				MimeType.o ReasonPhrase.o Util.o \
+				Connection.o Request.o Response.o Middleware.o \
 				Server.o Location.o ConfigParser.o ParserError.o \
 				HttpException.o Middleware.o Pipeline.o ErrorHandler.o \
 				AllowMethodHandler.o AutoIndexHandler.o CGIHandler.o CGI.o \

@@ -4,79 +4,18 @@
 #include "Request.hpp"
 #include "Response.hpp"
 
-#include <string>
-#include <fstream>
-#include <iostream>
-
 class Middleware
 {
     public:
-        Middleware(): _next(NULL) {};
-        virtual ~Middleware() {};
+        Middleware();
+        virtual ~Middleware() = 0;
 
-        virtual void execute(Request &req, Response &res)
-        {
-            if (_next)
-                _next->execute(req, res);
-        };
-
-        void setNext(Middleware *next)
-        {
-            _next = next;
-        }
-
-        Middleware *getNext()
-        {
-            return _next;
-        }
+        virtual void execute(Request &req, Response &res);
+        void setNext(Middleware *next);
+        Middleware *getNext();
 
     protected:
         Middleware *_next;
-
-        bool	file_exists(const std::string &filepath)
-        {
-            struct stat sb;
-            return stat(filepath.c_str(), &sb) == 0 && S_ISREG(sb.st_mode);
-        }
-
-
-        bool   file_executable(const std::string &filepath)
-        {
-            return (access(filepath.c_str(), X_OK) == 0);
-        }
-
-        bool    file_extension(const std::string &filepath, const std::string &extension)
-        {
-            return (filepath.size() > extension.size()
-                && filepath.find(extension, filepath.size() - extension.size()) != std::string::npos);
-            // return (filepath.substr(filepath.find_last_of('.')) == extension);
-        }
-
-        std::string get_extension(const std::string &path)
-        {
-            std::size_t pos = path.find_last_of('.');
-            if (pos == std::string::npos)
-                return std::string();
-            return path.substr(pos);
-        }
-
-        std::string combine_path(const std::string &path1, const std::string &path2)
-        {
-            std::string path = path1;
-            if (path[path.size() - 1] != '/')
-                path += '/';
-            path += path2;
-            return path;
-        }
-
-        template <typename T>
-        std::string to_string(T value)
-        {
-            std::ostringstream os;
-            os << value;
-            return os.str();
-        }
-
 };
 
 class Logger: public Middleware

@@ -2,6 +2,7 @@
 #include "Singleton.hpp"
 #include "HttpException.hpp"
 #include "ReasonPhrase.hpp"
+#include "Util.hpp"
 
 static void generate_html(std::stringstream &ss, int status_code, std::string reason);
 
@@ -16,7 +17,7 @@ void ErrorHandler::execute(Request &req, Response &res)
     catch (const HttpException &e)
     {
         const std::string filepath = req._server_config->getErrorPagePath(e.status_code());
-        if (filepath.size() && file_exists(filepath))
+        if (filepath.size() && Util::file_exists(filepath))
         {
             res.send_file(e.status_code(), filepath);
         }
