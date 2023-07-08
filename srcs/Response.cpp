@@ -3,6 +3,7 @@
 #include "SessionHandler.hpp"
 #include "MimeType.hpp"
 #include "ReasonPhrase.hpp"
+#include "Util.hpp"
 
 Response::Response(Connection &connection)
 : _connection(connection)
