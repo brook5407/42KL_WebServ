@@ -1,13 +1,14 @@
 #ifndef MIMETYPE_HPP
 # define MIMETYPE_HPP
 
+#include <string>
 #include <map>
 
-class MimeType: public std::map<const char *, const char *>
+class MimeType: public std::map<std::string, const char *>
 {
     public:
         MimeType();
-        const char *lookup(const char *extension);
+        const char *lookup(const std::string &extension);
 };
 
 #endif
