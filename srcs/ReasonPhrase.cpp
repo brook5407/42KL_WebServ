@@ -71,7 +71,8 @@ ReasonPhrase::ReasonPhrase()
 
 const char *ReasonPhrase::lookup(int status_code)
 {
-    if (count(status_code))
-        return operator[](status_code);
-    return "Unknown";
+    iterator it = find(status_code);
+    if (it == end())
+        return "Unknown";
+    return it->second;
 }

@@ -73,7 +73,8 @@ MimeType::MimeType()
 
 const char *MimeType::lookup(const std::string &extension)
 {
-    if (count(extension))
-        return operator[](extension);
-    return "application/octet-stream";
+    iterator it = find(extension);
+    if (it == end())
+        return "application/octet-stream";
+    return it->second;
 }
