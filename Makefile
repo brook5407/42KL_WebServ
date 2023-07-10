@@ -126,10 +126,15 @@ test_cases:
 	./$(NAME) test/no_ip.conf 2>&1 | grep "No ip in the configuration file"
 	./$(NAME) test/no_root.conf 2>&1 | grep "No root in the configuration file"
 	./$(NAME) test/invalid_location.conf 2>&1 | grep "Invalid prefix in location"
+	./$(NAME) test/invalid_method.conf 2>&1 | grep "Invalid method in location"
 	./$(NAME) test/conflict_port.conf 2>&1 |grep "Address already in use"
 
 	(pkill $(NAME) || true) && screen -dm ./$(NAME) test/location.conf && sleep 1 \
 	&& curl -s -o - localhost:8080 | grep 404 \
+	&& curl -s -o - localhost:8080/ | grep 404 \
+	&& curl -s -o - localhost:8080/whatever | grep 404 \
+	&& curl -s -o - localhost:8080/dir | grep "Index of" \
+	&& curl -v -s -o - localhost:8080/dir 2>&1  | grep "HTTP/1.1 200 OK" \
 
 	(pkill $(NAME) || true) && screen -dm ./$(NAME) test/multi_server.conf && sleep 1 \
 	&& curl -s -o - --resolve host0.com:8080:127.0.0.1 host0.com:8080 | grep one \
@@ -141,7 +146,20 @@ test_cases:
 	&& curl -s -o - --resolve host3.com:8080:127.0.0.1 host3.com:8080 | grep one \
 
 	(pkill $(NAME) || true) && screen -dm ./$(NAME) test/redirect.conf && sleep 1 \
-	&& curl -v localhost:8080 2>&1 | grep 301 \
-	&& curl -v localhost:8080 2>&1 | grep banana \
-	&& curl -v localhost:8080/b 2>&1 | grep 302 \
-	&& curl -v localhost:8080/b 2>&1 | grep durian \
+	&& curl -v localhost:8080 2>&1 | grep "HTTP/1.1 301 Moved Permanently" \
+	&& curl -v localhost:8080 2>&1 | grep "Location: https://www.google.com/search?q=banana" \
+	&& curl -v localhost:8080/ 2>&1 | grep "HTTP/1.1 301 Moved Permanently" \
+	&& curl -v localhost:8080/ 2>&1 | grep "Location: https://www.google.com/search?q=banana" \
+	&& curl -v localhost:8080/b 2>&1 | grep "HTTP/1.1 302 Found" \
+	&& curl -v localhost:8080/b 2>&1 | grep "Location: https://www.google.com/search?q=durian" \
+	&& curl -v localhost:8080/c 2>&1 | grep "HTTP/1.1 404 Not Found" \
+
+	(pkill $(NAME) || true) && screen -dm ./$(NAME) test/method.conf && sleep 1 \
+	&& curl -v -X GET -s -o - localhost:8080/get 2>&1 | grep "REQUEST_METHOD=GET" \
+	&& curl -v -X POST -s -o - localhost:8080/post 2>&1 | grep "REQUEST_METHOD=POST" \
+	&& curl -v -X PUT -s -o - localhost:8080/put 2>&1 | grep "REQUEST_METHOD=PUT" \
+	&& curl -v -X DELETE -s -o - localhost:8080/delete 2>&1 | grep "REQUEST_METHOD=DELETE" \
+	&& curl -v -X POST -s -o - localhost:8080/get 2>&1 | grep "HTTP/1.1 405 Method Not Allowed" \
+	&& curl -v -X PUT -s -o - localhost:8080/post 2>&1 | grep "HTTP/1.1 405 Method Not Allowed" \
+	&& curl -v -X DELETE -s -o - localhost:8080/put 2>&1 | grep "HTTP/1.1 405 Method Not Allowed" \
+	&& curl -v -X GET -s -o - localhost:8080/delete 2>&1 | grep "HTTP/1.1 405 Method Not Allowed" \
