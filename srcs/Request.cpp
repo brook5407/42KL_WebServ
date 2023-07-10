@@ -166,6 +166,8 @@ void Request::find_location_config(std::vector<Server> &_serverConfigs)
         {
             if (locations[i].getPrefix() == route || locations[i].getPrefix() == route + "/")
             {
+                if (locations[i].checkRedirection() && locations[i].getPrefix() !=  this->_uri)
+                    continue;
                 this->_location_config = &locations[i];
                 this->_script_name = this->_uri;
                 pos = route.find('/');
