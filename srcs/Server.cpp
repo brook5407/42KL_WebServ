@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/13 15:50:21 by chchin            #+#    #+#             */
-/*   Updated: 2023/07/04 11:30:30 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/11 20:03:52 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,6 +93,14 @@ void	Server::setMaxBodySize(std::string size) {
         throw ParserError("Invalid client buffet size", size);
 }
 
+void    Server::setMimeType(std::string extension, std::string type) {
+    if (extension[0] != '.')
+        throw ParserError("Invalid extension", extension);
+    else if (extension.length() == 1)
+        throw ParserError("Invalid extension", extension);
+    this->_mimeTypes.insert(std::pair<std::string, const char *>(extension, type.c_str()));
+}
+
 void	Server::addLocation(Location location) {
     this->_routes.push_back(location);
 }
@@ -138,6 +146,10 @@ std::vector<Location> &Server::getRoutes() {
     return (this->_routes);
 }
 
+MimeType &Server::getMimeTypes() {
+    return (this->_mimeTypes);
+}
+
 std::ostream& operator<<(std::ostream& os, const Server& server) {
     for (std::vector<std::string>::const_iterator it = server._names.begin(); it != server._names.end(); it++) {
         os << "Server name: " << *it << std::endl;
@@ -151,6 +163,10 @@ std::ostream& operator<<(std::ostream& os, const Server& server) {
     os << "Max body size: " << server.getMaxBodySize() << std::endl;
     for (std::vector<Location>::const_iterator it = server._routes.begin(); it != server._routes.end(); it++) {
         os << *it << std::endl;
+    }
+    os << "Mime types: " << std::endl;
+    for (MimeType::const_iterator it = server._mimeTypes.begin(); it != server._mimeTypes.end(); it++) {
+        os << it->first << ": " << it->second << std::endl;
     }
     return (os);
 }

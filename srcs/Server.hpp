@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 10:03:53 by chchin            #+#    #+#             */
-/*   Updated: 2023/07/01 23:16:17 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/11 11:10:06 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 # include <iostream>
 # include <iterator>
 # include "Location.hpp"
+# include "MimeType.hpp"
 
 typedef std::vector<std::string>::iterator conf_t;
 
@@ -37,6 +38,7 @@ class Server {
 		std::map<int, std::string>	_errorPages;
 		size_t						_maxBodySize;
 		std::vector<Location>		_routes;
+		MimeType					_mimeTypes;
 
 	public:
 		void	setName(std::string name);
@@ -46,6 +48,7 @@ class Server {
 		void	setMaxBodySize(std::string size);
 		void	addLocation(Location location);
 		void	defaultErrorPages();
+		void	setMimeType(std::string extension, std::string type);
 
 		std::vector<std::string>	&getNames();
 		std::string					getHost() const;
@@ -53,6 +56,7 @@ class Server {
 		std::string					getErrorPagePath(int error_code) const;
 		size_t						getMaxBodySize() const;
 		std::vector<Location>		&getRoutes();
+		MimeType					&getMimeTypes();
 
 		bool checkDigit(std::string str);
 		bool checkIP(std::string str);

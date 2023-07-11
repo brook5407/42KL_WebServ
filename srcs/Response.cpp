@@ -15,6 +15,7 @@ Response::Response(Response const &src)
 
 void Response::send_location(int status_code, const std::string &location)
 {
+    (void)status_code;
     std::stringstream ss;
     ss << "Location: " << location << "\r\n"
         "Content-Length: 0\r\n"

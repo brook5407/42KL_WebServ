@@ -1,6 +1,7 @@
 #include "CGIHandler.hpp"
 #include "Singleton.hpp"
 #include "SessionHandler.hpp"
+#include <signal.h>
 #include "Util.hpp"
 
 extern char **environ;

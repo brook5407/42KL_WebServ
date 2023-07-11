@@ -78,10 +78,10 @@ void generate_html(std::stringstream &ss, DIR *dir, const std::string &uri, cons
         stat(filepath.c_str(), &st);
         if (entry->d_type == DT_REG)
         {
-            if (st.st_size > 1000)
-                ss << st.st_size / 1000 << " KB";
-            else if (st.st_size > 1000000)
+            if (st.st_size > 1000000)
                 ss << st.st_size / 1000000 << " MB";
+            else if (st.st_size > 1000)
+                ss << st.st_size / 1000 << " KB";
             else
                 ss << st.st_size << " Bytes";
         }

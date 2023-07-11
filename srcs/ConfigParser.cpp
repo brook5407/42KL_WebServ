@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/20 10:12:24 by chchin            #+#    #+#             */
-/*   Updated: 2023/07/06 11:18:39 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/11 20:13:22 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -132,6 +132,13 @@ void ConfigParser::parseServer(conf_t &line_pos, conf_t end)
                 throw ParserError("Error_page block requires a code and a path", *line_pos);
             else
                 server.setErrorPage(line[1], line[2]);
+        }
+        else if (line[0] == "add_ext")
+        {
+            if (line.size() != 3)
+                throw ParserError("Add_ext block requires an extension and a path", *line_pos);
+            else
+                server.setMimeType(line[1], line[2]);
         }
         else
             throw ParserError("Invalid block", *line_pos);
