@@ -1,7 +1,10 @@
 #include "AutoIndexHandler.hpp"
 #include <dirent.h>
+#include <sys/stat.h>
+#include <ctime>
 
-static void generate_html(std::stringstream &ss, DIR *dir, const std::string &uri);
+static void generate_html(std::stringstream &ss, DIR *dir, const std::string &uri, const std::string &path);
+static void css_form(std::stringstream &ss);
 static void upload_form(std::stringstream &ss);
 static void show_toggle(std::stringstream &ss);
 
@@ -15,27 +18,37 @@ void AutoIndexHandler::execute(Request &req, Response &res)
     if (dir == NULL)
         return Middleware::execute(req, res);
     std::stringstream ss;
-    generate_html(ss, dir, req._uri);
+    generate_html(ss, dir, req._uri, req._script_name);
     closedir(dir);
     res.send_content(200, ss.str());
 }
 
-void generate_html(std::stringstream &ss, DIR *dir, const std::string &uri)
+void generate_html(std::stringstream &ss, DIR *dir, const std::string &uri, const std::string &path)
 {
     struct dirent *entry;
+    struct stat st;
+    char datetime[80];
 
+    css_form(ss);
     ss << "<html><body>";
     ss << "<h1>Index of " << uri << "</h1>";
-    ss << "<pre>";
-    ss << "<img src=\"/.hidden/icon/blank.png\"";
-    ss << "<a href=\"?NA\">Name</a>";
-    ss << "<hr>";
+    ss << "<ul><table>";
+    ss << "<tr><th><img src=\"/.hidden/icon/blank.png\" alt=\" \"> ";
+    ss << "Name</th>";
+    ss << "<th>Size</a></th>";
+    ss << "<th>Last Modified</th>";
+    ss << "</tr>";
+    // show parent directory if not root
     if (uri != "/")
     {
-        ss << "<img src=\"/.hidden/icon/up.png\">";
-        ss << "<a href=\"..\">Parent Directory</a>";
+        ss << "<tr>";
+        ss << "<td><img src=\"/.hidden/icon/up.png\"> ";
+        ss << "<a href=\"..\">Parent Directory</a></td>";
+        ss << "<td>-</td>";
+        ss << "<td>-</td>";
+        ss << "</tr>";
     }
-
+    ss << "<tr>";
     while ((entry = readdir(dir)) != NULL)
     {
         // hide dot files
@@ -44,9 +57,9 @@ void generate_html(std::stringstream &ss, DIR *dir, const std::string &uri)
         if (entry->d_type != DT_DIR && entry->d_type != DT_REG)
             continue;
         if (entry->d_type == DT_DIR)
-            ss << "<li><img src=\"/.hidden/icon/folder.png\">";
+            ss << "<td><img src=\"/.hidden/icon/folder.png\"> ";
         else
-            ss << "<li><img src=\"/.hidden/icon/image.png\">";
+            ss << "<td><img src=\"/.hidden/icon/image.png\"> ";
         ss << "<a href=\"" << uri;
         // add curent directory slash if not present
         if (uri[uri.size() - 1] != '/')
@@ -58,14 +71,82 @@ void generate_html(std::stringstream &ss, DIR *dir, const std::string &uri)
         ss << "\">" << entry->d_name;
         if (entry->d_type == DT_DIR)
             ss << "/";
-        ss << "</a>";
+        ss << "</a></td>";
+        ss << "<td>";
+        // show the size of the file or folder
+        std::string filepath = path + "/" + entry->d_name;
+        stat(filepath.c_str(), &st);
+        if (entry->d_type == DT_REG)
+        {
+            if (st.st_size > 1000)
+                ss << st.st_size / 1000 << " KB";
+            else if (st.st_size > 1000000)
+                ss << st.st_size / 1000000 << " MB";
+            else
+                ss << st.st_size << " Bytes";
+        }
+        else
+            ss << "-";
+        ss << "</td>";
+        // show the last modified date
+        std::strftime(datetime, sizeof(datetime), "%d-%b-%Y %H:%M", std::localtime(&st.st_ctime));
+        ss << "<td>" << datetime << "</td>";
+        ss << "</tr>";
     }
-
-    ss << "</li></pre><hr>";
+    ss << "</table></ul>";
     ss << "<input type=\"button\" value=\"Upload\" onclick=\"show()\">";
     upload_form(ss);
     show_toggle(ss);
     ss << "</body></html>";
+}
+
+void css_form(std::stringstream &ss)
+{
+    ss << "<head>"
+    "<title>Directory Listing</title>"
+    "<style>"
+    "ul {"
+    "    list-style-type: none;"
+    "    padding: 0;"
+    "}"
+
+    "table {"
+    "    width: 100%;"
+    "    table-layout: fixed;"
+    "}"
+
+    "th, td {"
+    "    white-space: nowrap;"
+    "    overflow: hidden;"
+    "    text-overflow: ellipsis;"
+    "    font-size: 14px;"
+    "    padding-right: 40px;"
+    "}"
+
+    "th {"
+    "    text-align: left;"
+    "    border-bottom: 1px solid #000;"
+    "}"
+
+    "td {"
+    "    border-bottom: 1px solid #ddd;"
+    "}"
+
+    "td:first-child {"
+    "    width: 70%;"
+    "}"
+
+    "td:last-child {"
+    "    width: 20%;"
+    "    white-space: nowrap;"
+    "    padding-right: 0;"
+    "}"
+
+    "img {"
+    "    vertical-align: middle;"
+    "}"
+    "</style>"
+    "</head>";
 }
 
 void upload_form(std::stringstream &ss)
