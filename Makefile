@@ -163,3 +163,7 @@ test_cases:
 	&& curl -v -X PUT -s -o - localhost:8080/post 2>&1 | grep "HTTP/1.1 405 Method Not Allowed" \
 	&& curl -v -X DELETE -s -o - localhost:8080/put 2>&1 | grep "HTTP/1.1 405 Method Not Allowed" \
 	&& curl -v -X GET -s -o - localhost:8080/delete 2>&1 | grep "HTTP/1.1 405 Method Not Allowed" \
+
+	(pkill $(NAME) || true) && screen -dm ./$(NAME) test/post_delete.conf && sleep 1 \
+	&& curl -F 'upload=@wwwroot/purple.jpg' http://localhost:8080/upload 2>&1 | grep "Upload Successful" \
+	&& curl -X DELETE http://localhost:8080/upload/purple.jpg 2>&1 | grep "has been deleted" \
