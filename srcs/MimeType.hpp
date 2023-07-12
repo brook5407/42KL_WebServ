@@ -4,11 +4,11 @@
 #include <string>
 #include <map>
 
-class MimeType: public std::map<std::string, const char *>
+class MimeType: public std::map<std::string, std::string>
 {
     public:
         MimeType();
-        const char *lookup(const std::string &extension);
+        std::string lookup(const std::string &extension) const;
 };
 
 #endif

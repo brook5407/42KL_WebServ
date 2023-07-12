@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/13 15:50:21 by chchin            #+#    #+#             */
-/*   Updated: 2023/07/11 20:03:52 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/12 10:14:44 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,7 +98,7 @@ void    Server::setMimeType(std::string extension, std::string type) {
         throw ParserError("Invalid extension", extension);
     else if (extension.length() == 1)
         throw ParserError("Invalid extension", extension);
-    this->_mimeTypes.insert(std::pair<std::string, const char *>(extension, type.c_str()));
+    this->_mimeTypes.insert(std::pair<std::string, std::string>(extension, type));
 }
 
 void	Server::addLocation(Location location) {

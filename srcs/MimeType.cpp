@@ -71,10 +71,9 @@ MimeType::MimeType()
     operator[](".7z") = "application/x-7z-compressed";
 }
 
-const char *MimeType::lookup(const std::string &extension)
+std::string MimeType::lookup(const std::string &extension) const
 {
-    iterator it = find(extension);
-    if (it == end())
-        return "application/octet-stream";
-    return it->second;
+    if (count(extension))
+        return find(extension)->second;
+    return std::string();
 }
