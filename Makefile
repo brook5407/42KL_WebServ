@@ -129,14 +129,16 @@ test_cases:
 	./$(NAME) test/invalid_method.conf 2>&1 | grep "Invalid method in location"
 	./$(NAME) test/conflict_port.conf 2>&1 |grep "Address already in use"
 
-	(pkill $(NAME) || true) && screen -dm ./$(NAME) test/location.conf && sleep 1 \
+	(pkill $(NAME) || true) && ./$(NAME) test/location.conf 2>&1 > webserv.log &
+	sleep 1 \
 	&& curl -s -o - localhost:8080 | grep 404 \
 	&& curl -s -o - localhost:8080/ | grep 404 \
 	&& curl -s -o - localhost:8080/whatever | grep 404 \
 	&& curl -s -o - localhost:8080/dir | grep "Index of" \
 	&& curl -v -s -o - localhost:8080/dir 2>&1  | grep "HTTP/1.1 200 OK" \
 
-	(pkill $(NAME) || true) && screen -dm ./$(NAME) test/multi_server.conf && sleep 1 \
+	(pkill $(NAME) || true) && ./$(NAME) test/multi_server.conf 2>&1 > webserv.log &
+	sleep 1 \
 	&& curl -s -o - --resolve host0.com:8080:127.0.0.1 host0.com:8080 | grep one \
 	&& curl -s -o - --resolve host1.com:8080:127.0.0.1 host1.com:8080 | grep one \
 	&& curl -s -o - --resolve host2.com:8080:127.0.0.1 host2.com:8080 | grep two \
@@ -145,7 +147,8 @@ test_cases:
 	&& curl -s -o - --resolve host3.org:8081:127.0.0.1 host3.org:8081 | grep three \
 	&& curl -s -o - --resolve host3.com:8080:127.0.0.1 host3.com:8080 | grep one \
 
-	(pkill $(NAME) || true) && screen -dm ./$(NAME) test/redirect.conf && sleep 1 \
+	(pkill $(NAME) || true) && ./$(NAME) test/redirect.conf 2>&1 > webserv.log &
+	sleep 1 \
 	&& curl -v localhost:8080 2>&1 | grep "HTTP/1.1 301 Moved Permanently" \
 	&& curl -v localhost:8080 2>&1 | grep "Location: https://www.google.com/search?q=banana" \
 	&& curl -v localhost:8080/ 2>&1 | grep "HTTP/1.1 301 Moved Permanently" \
@@ -154,7 +157,8 @@ test_cases:
 	&& curl -v localhost:8080/b 2>&1 | grep "Location: https://www.google.com/search?q=durian" \
 	&& curl -v localhost:8080/c 2>&1 | grep "HTTP/1.1 404 Not Found" \
 
-	(pkill $(NAME) || true) && screen -dm ./$(NAME) test/method.conf && sleep 1 \
+	(pkill $(NAME) || true) && ./$(NAME) test/method.conf  2>&1 > webserv.log &
+	sleep 1 \
 	&& curl -v -X GET -s -o - localhost:8080/get 2>&1 | grep "REQUEST_METHOD=GET" \
 	&& curl -v -X POST -s -o - localhost:8080/post 2>&1 | grep "REQUEST_METHOD=POST" \
 	&& curl -v -X PUT -s -o - localhost:8080/put 2>&1 | grep "REQUEST_METHOD=PUT" \
@@ -164,6 +168,15 @@ test_cases:
 	&& curl -v -X DELETE -s -o - localhost:8080/put 2>&1 | grep "HTTP/1.1 405 Method Not Allowed" \
 	&& curl -v -X GET -s -o - localhost:8080/delete 2>&1 | grep "HTTP/1.1 405 Method Not Allowed" \
 
-	(pkill $(NAME) || true) && screen -dm ./$(NAME) test/post_delete.conf && sleep 1 \
-	&& curl -F 'upload=@wwwroot/purple.jpg' http://localhost:8080/upload 2>&1 | grep "Upload Successful" \
-	&& curl -X DELETE http://localhost:8080/upload/purple.jpg 2>&1 | grep "has been deleted" \
+	(pkill $(NAME) || true) && ./$(NAME) test/post_delete.conf  2>&1 > webserv.log &
+	sleep 1 \
+	&& mkdir -p wwwroot/upload \
+	&& rm -f wwwroot/upload/purple.png \
+	&& test ! -f wwwroot/upload/purple.png \
+	&& curl -F 'upload=@wwwroot/purple.png' http://localhost:8080/upload 2>&1 | grep "Upload Successful" \
+	&& test -f wwwroot/upload/purple.png \
+	&& curl -X DELETE http://localhost:8080/upload/purple.png 2>&1 | grep "has been deleted" \
+	&& test ! -f wwwroot/upload/purple.png \
+
+	@printf "\n\nTEST CASES COMPLETED SUCCESSFUL. Press ENTER to continue 42 tester" && read var_x && clear
+
