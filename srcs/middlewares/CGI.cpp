@@ -1,4 +1,5 @@
 #include "CGI.hpp"
+#include "HttpException.hpp"
 
 CGI::CGI(Response response)
 : child_pid(-1), _response(response),
@@ -29,8 +30,8 @@ void	CGI::setup_bash(const std::string &handler, const std::string &script, cons
 
 void	CGI::_execute_cgi(const std::string &body)
 {
-	if (!check_file(argv[0]))
-		throw CGIException();
+	if (!check_file(argv[1]))
+		throw HttpException(404, "File Not Found");
 
 	file_out = tmpfile();
 	file_out_fd = fileno(file_out);
@@ -43,17 +44,14 @@ void	CGI::_execute_cgi(const std::string &body)
 		throw CGIException();
 	else if (child_pid == 0)
 	{
-		if (body.empty() == true)
-		{
-			file_in = tmpfile();
-			file_in_fd = fileno(file_in);
-			write(file_in_fd, body.c_str(), body.size());
-			lseek(file_in_fd, 0, SEEK_SET);
-			if (dup2(file_in_fd, STDIN_FILENO) == -1)
-				throw CGIException();
-		}
+		file_in = tmpfile();
+		file_in_fd = fileno(file_in);
+		write(file_in_fd, body.c_str(), body.size());
+		lseek(file_in_fd, 0, SEEK_SET);
 
 		if (dup2(file_out_fd, STDOUT_FILENO) == -1)
+			throw CGIException();
+		if (dup2(file_in_fd, STDIN_FILENO) == -1)
 			throw CGIException();
 
 		char **arguments = string_to_char(this->argv);
@@ -105,4 +103,9 @@ void	CGI::add_envp(std::string key, const std::string &value)
 			key[i] = std::toupper(key[i]);
 	}
 	_envp.push_back(key + "=" + value);
+}
+
+void	CGI::add_local_envp(const char *var)
+{
+	_envp.push_back(std::string(var));
 }

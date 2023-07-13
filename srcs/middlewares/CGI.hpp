@@ -29,6 +29,7 @@ class CGI
 		int		is_timeout(int timeout);
 		void	add_envp(std::string key, const std::string &value);
 		void	set_session_id(const std::string &id);
+		void	add_local_envp(const char *var);
 
 		class CGIException : public std::exception
 		{

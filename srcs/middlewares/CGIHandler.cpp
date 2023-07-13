@@ -16,9 +16,9 @@ void CGIHandler::execute(Request &req, Response &res)
         _CGI.push_back(CGI(res));
         CGI &cgi = _CGI.back();
         cgi.set_session_id(Singleton<SessionHandler>::get_instance().get_session_id());
-        // char **envp = environ;
-        // while (*envp)
-        //     cgi.add_envp(*envp++);
+        char **envp = environ;
+        while (*envp)
+            cgi.add_local_envp(*envp++);
         cgi.add_envp("REQUEST_METHOD", req._method);
         cgi.add_envp("SERVER_PROTOCOL", "HTTP/1.1");
         cgi.add_envp("PATH_INFO", req._uri);

@@ -6,7 +6,6 @@
 #include <ctime>
 #include <algorithm>
 #include <map>
-#include "MimeType.hpp"
 
 class Response
 {

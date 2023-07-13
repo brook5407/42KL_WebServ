@@ -84,7 +84,7 @@ void Webserver::_loop_sockets(t_listen_sockets &listen_sockets)
             max_fd = std::max(max_fd, *it);
         }
 
-        Singleton<CGIHandler>::get_instance().timeout(300);
+        Singleton<CGIHandler>::get_instance().timeout(5);
     
         for (t_connections::iterator it = connections.begin(); it != connections.end();)
         {

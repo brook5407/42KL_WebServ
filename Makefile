@@ -184,5 +184,15 @@ test_cases:
 	&& curl -X DELETE http://localhost:8080/upload/purple.png 2>&1 | grep "has been deleted" \
 	&& test ! -f wwwroot/upload/purple.png \
 
+	(pkill $(NAME) || true) && ./$(NAME) test/CGI.conf  2>&1 > webserv.log &
+	sleep 1 \
+	&& curl -v localhost:8080/cookie/cookie.py | grep "403 Forbidden" \
+	&& curl -v localhost:8080/cookie/file_does_not_exist.sh | grep "404 Not Found" \
+	&& curl -v localhost:8080/cookie/non_executable.sh | grep "hello" \
+	&& curl -v localhost:8080/cookie/timeout.sh | grep "Process has timed out" \
+	&& curl -v localhost:8080/cookie/test_envp.sh | grep "PWD" \
+	&& curl -v localhost:8080/cookie/cookie.sh?query=string | grep "QUERY_STRING" \
+	&& curl -v -X POST -d "check=input" localhost:8080/cookie/test_input.sh \
+
 	@printf "\n\nTEST CASES COMPLETED SUCCESSFUL. Press ENTER to continue 42 tester" && read var_x && clear
 

@@ -24,13 +24,11 @@ void Response::send_location(int status_code, const std::string &location)
 
 void Response::send_content(int status_code, const std::string &data, const std::string &type)
 {
-    // const int status_code = status == 0? 200 : _status;
     std::stringstream ss;
     add_header(ss, status_code);
     ss << "Content-Length: " << data.size() << "\r\n";
     if (!type.empty())
         ss << "Content-Type: " << type << "\r\n";
-    // ss << "Connection: close\r\n";
     ss << "\r\n" << data;
     end(ss);
 }
@@ -39,7 +37,6 @@ void Response::send_file(int status_code, const std::string &filepath, const std
 {
     std::stringstream ss;
     add_header(ss, status_code);
-    // _ifile triggers sendfile, todo clearer approach
     _connection._ifile.open(filepath.c_str(), std::ios::in | std::ios::binary);
     if (!_connection._ifile.is_open())
     {
@@ -48,11 +45,6 @@ void Response::send_file(int status_code, const std::string &filepath, const std
         end(ss);
         return;
     }
-
-    // _connection._ifile.seekg(0, std::ios::end);
-    // std::size_t length = _connection._ifile.tellg();
-    // _connection._ifile.seekg(0, std::ios::beg);
-    // ss << "Content-Length: " << length << "\r\n";
 
     struct stat fileStat;
     if (stat(filepath.c_str(), &fileStat) == 0)
@@ -65,8 +57,6 @@ void Response::send_file(int status_code, const std::string &filepath, const std
     }
 
     {
-        // const std::string extension = Util::get_extension(filepath);
-        // const std::string content_type = Singleton<MimeType>::get_instance().lookup(extension);
         ss << "Content-Type: " << mimetype << "\r\n";
     }
     ss << "\r\n";
@@ -75,47 +65,13 @@ void Response::send_file(int status_code, const std::string &filepath, const std
 
 void Response::send_error_file(int status_code, const std::string &filepath)
 {
-    std::stringstream ss;
-    add_header(ss, status_code);
-    // _ifile triggers sendfile, todo clearer approach
-    _connection._ifile.open(filepath.c_str(), std::ios::in | std::ios::binary);
-    if (!_connection._ifile.is_open())
-    {
-        std::cout << "sendfile failed. no body is sent" << std::endl;
-        ss << "Content-Length: 0\r\n\r\n";
-        end(ss);
-        return;
-    }
-
-    // _connection._ifile.seekg(0, std::ios::end);
-    // std::size_t length = _connection._ifile.tellg();
-    // _connection._ifile.seekg(0, std::ios::beg);
-    // ss << "Content-Length: " << length << "\r\n";
-
-    struct stat fileStat;
-    if (stat(filepath.c_str(), &fileStat) == 0)
-    {
-        time_t modifiedTime = fileStat.st_mtime;
-        char timeBuffer[100];
-        strftime(timeBuffer, sizeof(timeBuffer), "%a, %d %b %Y %H:%M:%S GMT", gmtime(&modifiedTime));
-        ss << "Content-Length: " << fileStat.st_size << "\r\n";
-        ss << "Last-Modified: " << timeBuffer << "\r\n"; // for caching
-    }
-
-    {
-        // const std::string content_type = Singleton<MimeType>::get_instance().lookup(extension);
-        const std::string content_type = "text/html";
-        ss << "Content-Type: " << content_type << "\r\n";
-    }
-    ss << "\r\n";
-    end(ss);
+    send_file(status_code, filepath, "text/html");
 }
 
 void Response::send_cgi_fd(int fd, const std::string &session_id)
 {
     char header[8192];
     off_t fsize = lseek(fd, 0, SEEK_END);
-    //todo check fsize -1
     lseek(fd, 0, SEEK_SET);
     int read_size = read(fd, header, sizeof(header));
     if (read_size < 0)
@@ -141,7 +97,6 @@ void Response::send_cgi_fd(int fd, const std::string &session_id)
     ss << "Content-Length: " << cont_length << "\r\n";
     std::stringstream cgi_ss(std::string(header, read_size));
     std::string cgi_line;
-    // char session_key[] = "X-Replace-Session:";
     while (std::getline(cgi_ss, cgi_line))
     {
         if (cgi_line.empty() || cgi_line[0] == '\r')
@@ -155,7 +110,6 @@ void Response::send_cgi_fd(int fd, const std::string &session_id)
     lseek(fd, header_size, SEEK_SET);
     _connection._in_fd = fd;
     end(ss);
-    // std::cout << "send fd " << _fd << " sz:" << fsize << std::endl;
 }
 
 void Response::set_keep_alive(bool keep_alive)
