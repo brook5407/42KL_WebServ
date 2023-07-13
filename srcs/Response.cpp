@@ -1,7 +1,6 @@
 #include "Response.hpp"
 #include "Singleton.hpp"
 #include "SessionHandler.hpp"
-#include "MimeType.hpp"
 #include "ReasonPhrase.hpp"
 #include "Util.hpp"
 
@@ -36,7 +35,7 @@ void Response::send_content(int status_code, const std::string &data, const std:
     end(ss);
 }
 
-void Response::send_file(int status_code, const std::string &filepath)
+void Response::send_file(int status_code, const std::string &filepath, const std::string &mimetype)
 {
     std::stringstream ss;
     add_header(ss, status_code);
@@ -66,8 +65,46 @@ void Response::send_file(int status_code, const std::string &filepath)
     }
 
     {
-        const std::string extension = Util::get_extension(filepath);
-        const std::string content_type = Singleton<MimeType>::get_instance().lookup(extension);
+        // const std::string extension = Util::get_extension(filepath);
+        // const std::string content_type = Singleton<MimeType>::get_instance().lookup(extension);
+        ss << "Content-Type: " << mimetype << "\r\n";
+    }
+    ss << "\r\n";
+    end(ss);
+}
+
+void Response::send_error_file(int status_code, const std::string &filepath)
+{
+    std::stringstream ss;
+    add_header(ss, status_code);
+    // _ifile triggers sendfile, todo clearer approach
+    _connection._ifile.open(filepath.c_str(), std::ios::in | std::ios::binary);
+    if (!_connection._ifile.is_open())
+    {
+        std::cout << "sendfile failed. no body is sent" << std::endl;
+        ss << "Content-Length: 0\r\n\r\n";
+        end(ss);
+        return;
+    }
+
+    // _connection._ifile.seekg(0, std::ios::end);
+    // std::size_t length = _connection._ifile.tellg();
+    // _connection._ifile.seekg(0, std::ios::beg);
+    // ss << "Content-Length: " << length << "\r\n";
+
+    struct stat fileStat;
+    if (stat(filepath.c_str(), &fileStat) == 0)
+    {
+        time_t modifiedTime = fileStat.st_mtime;
+        char timeBuffer[100];
+        strftime(timeBuffer, sizeof(timeBuffer), "%a, %d %b %Y %H:%M:%S GMT", gmtime(&modifiedTime));
+        ss << "Content-Length: " << fileStat.st_size << "\r\n";
+        ss << "Last-Modified: " << timeBuffer << "\r\n"; // for caching
+    }
+
+    {
+        // const std::string content_type = Singleton<MimeType>::get_instance().lookup(extension);
+        const std::string content_type = "text/html";
         ss << "Content-Type: " << content_type << "\r\n";
     }
     ss << "\r\n";

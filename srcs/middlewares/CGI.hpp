@@ -38,20 +38,16 @@ class CGI
 					return ("CGI ERROR!");
 				}
 		};
-		// int							_socket;
-		pid_t						child_pid;
 
+		pid_t						child_pid;
 		Response					_response;
 	private:
 		bool	check_file(std::string &route);
 		void	_execute_cgi(const std::string &body);
-		// const std::string &get_output(void);
-		char	**convert_envp(const std::vector<std::string> &vec);
+		char	**string_to_char(const std::vector<std::string> &vec);
 
-		// std::string					output;
 		std::vector<std::string>	argv;
 		time_t						start_time;
-		// std::string					_body;
 		FILE						*file_in;
 		FILE						*file_out;
 		int							file_in_fd;

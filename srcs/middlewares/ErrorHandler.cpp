@@ -19,7 +19,7 @@ void ErrorHandler::execute(Request &req, Response &res)
         const std::string filepath = req._server_config->getErrorPagePath(e.status_code());
         if (filepath.size() && Util::file_exists(filepath))
         {
-            res.send_file(e.status_code(), filepath);
+            res.send_error_file(e.status_code(), filepath);
         }
         else
         {
