@@ -13,11 +13,6 @@ void CGIHandler::execute(Request &req, Response &res)
     if (arg0.empty())
         return Middleware::execute(req, res);
     {
-        // if (!file_exists(req._script_name))
-        //     throw HttpException(404, "File not found");
-        // if (!file_executable(req._script_name))
-        //     throw HttpException(403, "File is not executable");
-
         _CGI.push_back(CGI(res));
         CGI &cgi = _CGI.back();
         cgi.set_session_id(Singleton<SessionHandler>::get_instance().get_session_id());
