@@ -15,7 +15,7 @@ CXXFLAGS	:= -Wall -Wextra -Werror -Wshadow -std=c++98 -MMD $(ASAN) -Isrcs -Isrcs
 # CXXFLAGS  	+= -O3 -flto
 CXXFLAGS  	+= -g3
 LDLIBS		:= -lstdc++ $(ASAN)
-VPATH		:= srcs srcs/middlewares $(OBJDIR)
+VPATH		:= srcs srcs/middlewares $(OBJDIR) test
 PORT		:= 8080
 
 ifeq ($(shell uname), Linux)
@@ -30,7 +30,7 @@ ifeq ($(shell which g++), )
 	CXXFLAGS	+= -fPIE
 endif
 
-.PHONY: all clean fclean re test
+.PHONY: all clean fclean re test make_test_dir make_test_conf test_config_run
 
 all: $(NAME) $(OBJDIR)
 
@@ -57,7 +57,7 @@ testx: $(NAME)
 	curl -v -F key1=value1 -F upload=@Makefile localhost:9999 -v
 	@echo PING | nc localhost $(PORT)
 
-test: $(NAME) tester test_dir test_conf test_cases
+test: $(NAME) tester make_test_dir make_test_conf test_config_run test_cases
 	pkill $(NAME) || true
 	./$(NAME) YoupiBanane.conf 2>&1 > webserv.log &
 	time ./tester http://localhost:$(PORT) || bash -c "time ./ubuntu_tester http://localhost:$(PORT)"
@@ -69,7 +69,7 @@ tester:
 	curl -LO https://cdn.intra.42.fr/document/document/17627/ubuntu_tester
 	chmod +x tester ubuntu_cgi_tester cgi_tester ubuntu_tester
 
-test_dir:
+make_test_dir:
 	mkdir -p YoupiBanane
 	echo z > YoupiBanane/youpi.bad_extension 
 	touch YoupiBanane/youpi.bla
@@ -78,7 +78,7 @@ test_dir:
 	mkdir -p YoupiBanane/Yeah
 	echo x > YoupiBanane/Yeah/not_happy.bad_extension
 
-test_conf:
+make_test_conf:
 	echo "\
 server {\n\
     listen 0.0.0.0:$(PORT);\n\
@@ -118,6 +118,12 @@ server {\n\
         add_cgi .py /usr/bin/python3;\n\
     }\n\
 }" > YoupiBanane.conf
+
+test_config: test/test_config.o Server.o Location.o ConfigParser.o ParserError.o MimeType.o
+
+test_config_run: test_config
+	./$< YoupiBanane.conf
+	@printf "\n\nTEST CONFIG COMPLETED SUCCESSFUL. Press ENTER to continue test cases" && read var_x && clear
 
 test_cases:
 	./$(NAME) no_extension 2>&1 | grep "Wrong file extension"

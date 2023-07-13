@@ -22,7 +22,7 @@ class ParserError: public std::exception
         std::string _msg;
     public:
         ParserError();
-        ParserError(std::string error, std::string line);
+        ParserError(const std::string &error, const std::string &line);
         ~ParserError() throw();
         const char *what () const throw ();
 };

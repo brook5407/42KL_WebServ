@@ -61,8 +61,6 @@ class Location {
 		std::string				getCgiPath(std::string extension) const;
 		size_t					getMaxBodySize() const;
 
-		friend class ParserError;
-
 	friend std::ostream &operator<<(std::ostream &out, const Location &location);
 };
 

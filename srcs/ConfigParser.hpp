@@ -27,15 +27,13 @@ class ConfigParser
         ConfigParser(std::string configFile);
         ~ConfigParser();
         
-        void    parseConfig(std::vector<std::string> config);
+        void    parseConfig(std::vector<std::string> &config);
         void    parseServer(conf_t &line_pos, conf_t end);
         Location parseLocation(conf_t &line_pos, conf_t end);
 
         void    checkServer();
 
         std::vector<Server>   &getServers();
-        
-        friend class ParserError;
         
     private:
         std::vector<Server>   _servers;

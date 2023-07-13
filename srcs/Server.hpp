@@ -62,8 +62,6 @@ class Server {
 		bool checkIP(std::string str);
 		std::vector<std::string> split(std::string str, std::string delimiter);
 		
-		friend class ParserError;
-		
 	friend std::ostream& operator<<(std::ostream& os, const Server& server);
 };
 

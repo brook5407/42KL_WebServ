@@ -42,7 +42,7 @@ ConfigParser::~ConfigParser()
 {
 }
 
-void ConfigParser::parseConfig(std::vector<std::string> config)
+void ConfigParser::parseConfig(std::vector<std::string> &config)
 {
     for (conf_t line_pos = config.begin(); line_pos != config.end(); line_pos++)
     {

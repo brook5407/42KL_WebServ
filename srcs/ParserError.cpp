@@ -14,7 +14,8 @@
 
 ParserError::ParserError() {}
 
-ParserError::ParserError(std::string error, std::string line){
+ParserError::ParserError(const std::string &error, const std::string &line)
+{
     _msg = "\033[1m\033[31mError: \033[0m" + error + " => " + line.substr(line.find_first_not_of(" \t"));
 }
 
