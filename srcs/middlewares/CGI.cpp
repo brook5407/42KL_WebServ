@@ -43,7 +43,7 @@ void	CGI::_execute_cgi(const std::string &body)
 		throw CGIException();
 	else if (child_pid == 0)
 	{
-		if (body.empty() == true)
+		// if (body.empty() == true)
 		{
 			file_in = tmpfile();
 			file_in_fd = fileno(file_in);

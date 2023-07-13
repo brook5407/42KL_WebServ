@@ -84,6 +84,8 @@ server {\n\
     listen 0.0.0.0:$(PORT);\n\
     server_name localhost;\n\
     client_max_body_size 100m;\n\
+    add_ext .bad_extension text/plain;\n\
+    add_ext .pouic text/plain;\n\
     location / {\n\
         root ./YoupiBanane;\n\
         autoindex on;\n\
