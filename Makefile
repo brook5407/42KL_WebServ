@@ -155,16 +155,6 @@ test_cases:
 	&& curl -s -o - --resolve host3.org:8081:127.0.0.1 host3.org:8081 | grep three \
 	&& curl -s -o - --resolve host3.com:8080:127.0.0.1 host3.com:8080 | grep one \
 
-	(pkill $(NAME) || true) && ./$(NAME) test/redirect.conf 2>&1 > webserv.log &
-	sleep 1 \
-	&& curl -v localhost:8080 2>&1 | grep "HTTP/1.1 301 Moved Permanently" \
-	&& curl -v localhost:8080 2>&1 | grep "Location: https://www.google.com/search?q=banana" \
-	&& curl -v localhost:8080/ 2>&1 | grep "HTTP/1.1 301 Moved Permanently" \
-	&& curl -v localhost:8080/ 2>&1 | grep "Location: https://www.google.com/search?q=banana" \
-	&& curl -v localhost:8080/b 2>&1 | grep "HTTP/1.1 302 Found" \
-	&& curl -v localhost:8080/b 2>&1 | grep "Location: https://www.google.com/search?q=durian" \
-	&& curl -v localhost:8080/c 2>&1 | grep "HTTP/1.1 404 Not Found" \
-
 	(pkill $(NAME) || true) && ./$(NAME) test/method.conf  2>&1 > webserv.log &
 	sleep 1 \
 	&& curl -v -X GET -s -o - localhost:8080/get 2>&1 | grep "REQUEST_METHOD=GET" \
@@ -189,13 +179,23 @@ test_cases:
 
 	(pkill $(NAME) || true) && ./$(NAME) test/CGI.conf  2>&1 > webserv.log &
 	sleep 1 \
-	&& curl -v localhost:8080/cookie/cookie.py | grep "403 Forbidden" \
-	&& curl -v localhost:8080/cookie/file_does_not_exist.sh | grep "404 Not Found" \
-	&& curl -v localhost:8080/cookie/non_executable.sh | grep "hello" \
-	&& curl -v localhost:8080/cookie/timeout.sh | grep "Process has timed out" \
-	&& curl -v localhost:8080/cookie/test_envp.sh | grep "PWD" \
-	&& curl -v localhost:8080/cookie/cookie.sh?query=string | grep "QUERY_STRING" \
-	&& curl -v -X POST -d "check=input" localhost:8080/cookie/test_input.sh \
+	&& curl -v localhost:8080/cookie/cookie.py 2>&1 | grep "403 Forbidden" \
+	&& curl -v localhost:8080/cookie/file_does_not_exist.sh 2>&1 | grep "404 Not Found" \
+	&& curl -v localhost:8080/cookie/non_executable.sh 2>&1 | grep "hello" \
+	&& curl -v localhost:8080/cookie/timeout.sh 2>&1 | grep "Process has timed out" \
+	&& curl -v localhost:8080/cookie/test_envp.sh 2>&1 | grep "PWD" \
+	&& curl -v localhost:8080/cookie/cookie.sh?query=string 2>&1 | grep "QUERY_STRING=query=string" \
+	&& curl -v -X POST -d "check=input" localhost:8080/cookie/test_input.sh 2>&1 | grep "Input: check=input" \
+
+	(pkill $(NAME) || true) && ./$(NAME) test/redirect.conf 2>&1 > webserv.log &
+	sleep 1 \
+	&& curl -v localhost:8080 2>&1 | grep "HTTP/1.1 301 Moved Permanently" \
+	&& curl -v localhost:8080 2>&1 | grep "Location: https://www.google.com/search?q=banana" \
+	&& curl -v localhost:8080/ 2>&1 | grep "HTTP/1.1 301 Moved Permanently" \
+	&& curl -v localhost:8080/ 2>&1 | grep "Location: https://www.google.com/search?q=banana" \
+	&& curl -v localhost:8080/b 2>&1 | grep "HTTP/1.1 302 Found" \
+	&& curl -v localhost:8080/b 2>&1 | grep "Location: https://www.google.com/search?q=durian" \
+	&& curl -v localhost:8080/c 2>&1 | grep "HTTP/1.1 404 Not Found" \
 
 	@printf "\n\nTEST CASES COMPLETED SUCCESSFUL. Press ENTER to continue 42 tester" && read var_x && clear
 

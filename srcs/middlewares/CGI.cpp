@@ -54,6 +54,9 @@ void	CGI::_execute_cgi(const std::string &body)
 		if (dup2(file_in_fd, STDIN_FILENO) == -1)
 			throw CGIException();
 
+		//unistd.h sysconf(_SC_OPEN_MAX)
+		for (int i = 3; i < 1024; ++i)
+			close(i);
 		char **arguments = string_to_char(this->argv);
 		char **envp = string_to_char(this->_envp);
 		execve(*arguments, arguments, envp);
