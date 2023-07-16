@@ -185,6 +185,7 @@ test_cases:
 	&& test -f wwwroot/upload/purple.png \
 	&& curl -X DELETE http://localhost:8080/upload/purple.png 2>&1 | grep "has been deleted" \
 	&& test ! -f wwwroot/upload/purple.png \
+	&& curl -v -F 'upload=@wwwroot/purple.png' http://localhost:8080/small 2>&1 | grep "HTTP/1.1 413 Payload Too Large" \
 
 	(pkill $(NAME) || true) && ./$(NAME) test/CGI.conf  2>&1 > webserv.log &
 	sleep 1 \

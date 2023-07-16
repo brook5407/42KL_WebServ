@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 10:03:53 by chchin            #+#    #+#             */
-/*   Updated: 2023/07/11 11:10:06 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/16 14:45:56 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@
 
 typedef std::vector<std::string>::iterator conf_t;
 
-std::vector<std::string> ft_split(std::string str, std::string delimiter);
+std::vector<std::string> ft_split(std::string str, const std::string &delimiter);
 
 class Location;
 
@@ -41,14 +41,14 @@ class Server {
 		MimeType					_mimeTypes;
 
 	public:
-		void	setName(std::string name);
-		void	setHost(std::string IP);
-		void	setPort(std::string port);
-		void	setErrorPage(std::string code, std::string path);
-		void	setMaxBodySize(std::string size);
+		void	setName(const std::string &name);
+		void	setHost(const std::string &IP);
+		void	setPort(const std::string &port);
+		void	setErrorPage(const std::string &code, const std::string &path);
+		void	setMaxBodySize(const std::string &size);
 		void	addLocation(Location location);
 		void	defaultErrorPages();
-		void	setMimeType(std::string extension, std::string type);
+		void	setMimeType(const std::string &extension, const std::string &type);
 
 		std::vector<std::string>	&getNames();
 		std::string					getHost() const;
@@ -58,9 +58,8 @@ class Server {
 		std::vector<Location>		&getRoutes();
 		MimeType					&getMimeTypes();
 
-		bool checkDigit(std::string str);
-		bool checkIP(std::string str);
-		std::vector<std::string> split(std::string str, std::string delimiter);
+		bool checkDigit(const std::string &str);
+		bool checkIP(const std::string &str);
 		
 	friend std::ostream& operator<<(std::ostream& os, const Server& server);
 };

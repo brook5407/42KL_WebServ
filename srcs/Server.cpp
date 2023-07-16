@@ -6,24 +6,19 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/13 15:50:21 by chchin            #+#    #+#             */
-/*   Updated: 2023/07/12 10:14:44 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/16 01:01:39 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 
-std::vector<std::string> ft_split(std::string str, std::string delimiter)
+std::vector<std::string> ft_split(std::string str, const std::string &delimiter)
 {
     std::vector<std::string> result;
     size_t index;
     while(str.size())
     {
-        index = str.find(delimiter[0]);
-        for (size_t i = 1; i < delimiter.size(); i++)
-        {
-            if (index > str.find(delimiter[i]))
-                index = str.find(delimiter[i]);
-        }
+        index = str.find_first_of(delimiter);
         if(index != std::string::npos )
         {
             if (index != 0)
@@ -46,11 +41,11 @@ Server::Server() {
 Server::~Server() {
 }
 
-void	Server::setName(std::string name) {
+void	Server::setName(const std::string &name) {
     this->_names.push_back(name);
 }
 
-void	Server::setHost(std::string IP) {
+void	Server::setHost(const std::string &IP) {
     if (!checkIP(IP))
         throw ParserError("Invalid IP address", IP);
     else if (IP == "localhost")
@@ -59,7 +54,7 @@ void	Server::setHost(std::string IP) {
         this->_host = IP;
 }
 
-void	Server::setPort(std::string port) {
+void	Server::setPort(const std::string &port) {
     if (!checkDigit(port))
         throw ParserError("Invalid port number", port);
     if (ft_stoi(port) > 65535)
@@ -68,13 +63,13 @@ void	Server::setPort(std::string port) {
         this->_port = ft_stoi(port);
 }
 
-void	Server::setErrorPage(std::string code, std::string path) {
+void	Server::setErrorPage(const std::string &code, const std::string &path) {
     if (!checkDigit(code))
         throw ParserError("Invalid error code", code);
     this->_errorPages.insert(std::pair<int, std::string>(ft_stoi(code), path));
 }
 
-void	Server::setMaxBodySize(std::string size) {
+void	Server::setMaxBodySize(const std::string &size) {
     int lastchar = size.length() - 1;
     if (checkDigit(size))
         this->_maxBodySize = ft_stoi(size);
@@ -93,7 +88,7 @@ void	Server::setMaxBodySize(std::string size) {
         throw ParserError("Invalid client buffet size", size);
 }
 
-void    Server::setMimeType(std::string extension, std::string type) {
+void    Server::setMimeType(const std::string &extension, const std::string &type) {
     if (extension[0] != '.')
         throw ParserError("Invalid extension", extension);
     else if (extension.length() == 1)
@@ -171,15 +166,15 @@ std::ostream& operator<<(std::ostream& os, const Server& server) {
     return (os);
 }
 
-bool Server::checkDigit(std::string str) {
-    for (std::string::iterator it = str.begin(); it != str.end(); it++) {
+bool Server::checkDigit(const std::string &str) {
+    for (std::string::const_iterator it = str.begin(); it != str.end(); it++) {
         if (!std::isdigit(*it))
             return (false);
     }
     return (true);
 }
 
-bool Server::checkIP(std::string IP)
+bool Server::checkIP(const std::string &IP)
 {
     if (IP.compare("localhost") == 0)
         return (true);
@@ -191,7 +186,7 @@ bool Server::checkIP(std::string IP)
     if (IPList.size() != 4)
         return (false);
     
-    for (std::vector<std::string>::iterator it = IPList.begin(); it != IPList.end(); it++)
+    for (std::vector<std::string>::const_iterator it = IPList.begin(); it != IPList.end(); it++)
     {
         if ((*it).length() > 3)
             return (false);

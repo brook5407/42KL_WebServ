@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/20 10:12:24 by chchin            #+#    #+#             */
-/*   Updated: 2023/07/12 10:49:51 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/16 14:54:59 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@ ConfigParser::ConfigParser(std::string configFile)
 {
     std::ifstream   file(configFile.c_str());
     //check last 4 char of config file
-    if (configFile.size() < 5 || configFile.substr(configFile.size() - 5) != ".conf")
+    if (configFile.size() < 5 || configFile.rfind(".conf") != configFile.size() - 5)
         throw ParserError("Wrong file extension", configFile);
     if (file)
     {
@@ -47,11 +47,8 @@ void ConfigParser::parseConfig(std::vector<std::string> &config)
     for (conf_t line_pos = config.begin(); line_pos != config.end(); line_pos++)
     {
         std::vector<std::string> line = ft_split(*line_pos, " ;\t\r\n");
-        if (!line.size() || line[0] == "")
-        {
-            line_pos++;
+        if (line.empty() || line[0] == "")
             continue;
-        }
         if (line[0] == "server")
         {
             if (line.size() != 2 || line[1] != "{")
@@ -68,22 +65,22 @@ void ConfigParser::parseConfig(std::vector<std::string> &config)
     }
 }
 
-void ConfigParser::parseServer(conf_t &line_pos, conf_t end)
+void ConfigParser::parseServer(conf_t &line_pos, const conf_t &end)
 {
     Server server;
     while (line_pos != end)
     {
-        std::vector<std::string> line = ft_split(*line_pos, " ;\t\r\n");
-        if (!line.size() || line[0] == "")
+        std::vector<std::string> token = ft_split(*line_pos, " ;\t\r\n");
+        if (token.empty() || token[0] == "")
         {
             line_pos++;
             continue;
         }
-        if (line[0] == "}" && line.size() == 1)
+        if (token[0] == "}" && token.size() == 1)
             break ;
-        else if (line[0] == "location")
+        else if (token[0] == "location")
         {
-            if (line.size() != 3 || line[2] != "{")
+            if (token.size() != 3 || token[2] != "{")
                 throw ParserError("Wrong location format", *line_pos);
             else
             {
@@ -91,15 +88,15 @@ void ConfigParser::parseServer(conf_t &line_pos, conf_t end)
                 continue;
             }
         }
-         else if (*line_pos->rbegin() != ';')
+        else if (!checkLastNonSpaceCharacter(*line_pos))
             throw ParserError("Line must end with semicolon", *line_pos);
-        else if (line[0] == "listen")
+        else if (token[0] == "listen")
         {
-            if (line.size() != 2)
+            if (token.size() != 2)
                 throw ParserError("Listen block requires an ip and a port", *line_pos);
             else
             {
-                std::vector<std::string> ip_port = ft_split(line[1], ":");
+                std::vector<std::string> ip_port = ft_split(token[1], ":");
                 if (ip_port.size() == 1)
                     throw ParserError("Listen block requires an ip and a port", *line_pos);
                 else
@@ -109,36 +106,36 @@ void ConfigParser::parseServer(conf_t &line_pos, conf_t end)
                 }
             }
         }
-        else if (line[0] == "server_name")
+        else if (token[0] == "server_name")
         {
-            if (line.size() < 2)
+            if (token.size() < 2)
                 throw ParserError("Server_name block requires at least one name", *line_pos);
             else
             {
-                for (size_t i = 1; i < line.size(); i++)
-                    server.setName(line[i]);
+                for (size_t i = 1; i < token.size(); i++)
+                    server.setName(token[i]);
             }
         }
-        else if (line[0] == "client_max_body_size")
+        else if (token[0] == "client_max_body_size")
         {
-            if (line.size() != 2)
+            if (token.size() != 2)
                 throw ParserError("Client_max_body_size block requires a size", *line_pos);
             else
-                server.setMaxBodySize(line[1]);
+                server.setMaxBodySize(token[1]);
         }
-        else if (line[0] == "error_page")
+        else if (token[0] == "error_page")
         {
-            if (line.size() != 3)
+            if (token.size() != 3)
                 throw ParserError("Error_page block requires a code and a path", *line_pos);
             else
-                server.setErrorPage(line[1], line[2]);
+                server.setErrorPage(token[1], token[2]);
         }
-        else if (line[0] == "add_ext")
+        else if (token[0] == "add_ext")
         {
-            if (line.size() != 3)
+            if (token.size() != 3)
                 throw ParserError("Add_ext block requires an extension and a path", *line_pos);
             else
-                server.setMimeType(line[1], line[2]);
+                server.setMimeType(token[1], token[2]);
         }
         else
             throw ParserError("Invalid block", *line_pos);
@@ -147,94 +144,94 @@ void ConfigParser::parseServer(conf_t &line_pos, conf_t end)
     _servers.push_back(server);
 }
 
-Location ConfigParser::parseLocation(conf_t &line_pos, conf_t end)
+Location ConfigParser::parseLocation(conf_t &line_pos, const conf_t &end)
 {
     Location location;
     while (line_pos != end)
     {
-        std::vector<std::string> line = ft_split(*line_pos, " ;\t\r\n");
-        if (!line.size() || line[0] == "")
+        std::vector<std::string> token = ft_split(*line_pos, " ;\t\r\n");
+        if (token.empty() || token[0] == "")
         {
             line_pos++;
             continue;
         }
-        if (line[0] == "}" && line.size() == 1)
+        if (token[0] == "}" && token.size() == 1)
         {
             line_pos++;
             return (location);
         }
-        else if (line[0] == "location")
+        else if (token[0] == "location")
         {
-            if (line.size() != 3)
+            if (token.size() != 3)
                 throw ParserError("Location block requires a path and a block", *line_pos);
             else
-                location.setPrefix(line[1]);
+                location.setPrefix(token[1]);
         }
-        else if (*line_pos->rbegin() != ';')
+        else if (!checkLastNonSpaceCharacter(*line_pos))
             throw ParserError("Line must end with semicolon", *line_pos);
-        else if (line[0] == "root")
+        else if (token[0] == "root")
         {
-            if (line.size() != 2)
+            if (token.size() != 2)
                 throw ParserError("Root block requires a path", *line_pos);
             else
-                location.setRoot(line[1]);
+                location.setRoot(token[1]);
         }
-        else if (line[0] == "methods")
+        else if (token[0] == "methods")
         {
-            if (line.size() < 2)
+            if (token.size() < 2)
                 throw ParserError("Methods block requires at least one method", *line_pos);
             else
             {
-                for (size_t i = 1; i < line.size(); i++)
-                    location.setMethod(line[i]);
+                for (size_t i = 1; i < token.size(); i++)
+                    location.setMethod(token[i]);
             }
         }
-        else if (line[0] == "index")
+        else if (token[0] == "index")
         {
-            if (line.size() < 2)
+            if (token.size() < 2)
                 throw ParserError("Index block requires a filename", *line_pos); 
             else
             {
-                for (size_t i = 1; i < line.size(); i++)
-                    location.setIndex(line[i]);
+                for (size_t i = 1; i < token.size(); i++)
+                    location.setIndex(token[i]);
             }
         }
-        else if (line[0] == "autoindex")
+        else if (token[0] == "autoindex")
         {
-            if (line.size() != 2)
+            if (token.size() != 2)
                 throw ParserError("Autoindex block requires on or off", *line_pos);
             else
-                location.setAutoIndex(line[1]);
+                location.setAutoIndex(token[1]);
         }
-        else if (line[0] == "client_max_body_size")
+        else if (token[0] == "client_max_body_size")
         {
-            if (line.size() != 2)
+            if (token.size() != 2)
                 throw ParserError("Client_max_body_size block requires a size", *line_pos);
             else
-                location.setMaxBodySize(line[1]);
+                location.setMaxBodySize(token[1]);
         }
-        else if (line[0] == "cgi_extensions")
+        else if (token[0] == "cgi_extensions")
         {
-            if (line.size() < 2)
+            if (token.size() < 2)
                 throw ParserError("Cgi_extensions block requires at least one extension", *line_pos);
             else
             {
-                for (size_t i = 1; i < line.size(); i++)
-                    location.setCgiExtension(line[i]);
+                for (size_t i = 1; i < token.size(); i++)
+                    location.setCgiExtension(token[i]);
             }
         }
-        else if (line[0] == "return")
+        else if (token[0] == "return")
         {
-            if (line.size() != 3)
+            if (token.size() != 3)
                 throw ParserError("Return block requires a code and a path", *line_pos);
             else
-                location.setRedirection(line[1], line[2]);
+                location.setRedirection(token[1], token[2]);
         }
-        else if (line[0] == "add_cgi")
-            if (line.size() != 3)
+        else if (token[0] == "add_cgi")
+            if (token.size() != 3)
                 throw ParserError("Add_cgi block requires cgi extension and a path", *line_pos);
             else
-                location.setCgiPath(line[1], line[2]);
+                location.setCgiPath(token[1], token[2]);
         else
             throw ParserError("Invalid block", *line_pos);
         line_pos++;
@@ -273,6 +270,20 @@ void ConfigParser::checkServer()
             }
         }
     }
+}
+
+bool ConfigParser::checkLastNonSpaceCharacter(const std::string &str)
+{
+    for (std::string::const_reverse_iterator it = str.rbegin(); it != str.rend(); ++it) {
+        if (!std::isspace(*it))
+        {
+            if (*it == ';')
+                return (true);
+            else
+                return (false);
+        }
+    }
+    return (false);
 }
 
 std::vector<Server> &ConfigParser::getServers()

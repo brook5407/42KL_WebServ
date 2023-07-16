@@ -6,7 +6,7 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 10:04:51 by chchin            #+#    #+#             */
-/*   Updated: 2023/07/04 10:20:15 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/16 14:41:07 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@
 # include <map>
 # include "ParserError.hpp"
 
-int ft_stoi(std::string str);
+int ft_stoi(const std::string &str);
 
 class Location {
 	public:
@@ -40,15 +40,15 @@ class Location {
 		std::map<std::string, std::string>	_cgiPath;
 
 	public:
-		void	setPrefix(std::string prefix);
-		void	setRoot(std::string path);
-		void	setMethod(std::string method);
-		void	setIndex(std::string path);
-		void 	setAutoIndex(std::string autoIndex);
-		void	setRedirection(std::string code, std::string url);
-		void	setCgiExtension(std::string extension);
-		void	setCgiPath(std::string extension, std::string path);
-		void	setMaxBodySize(std::string size);
+		void	setPrefix(const std::string &prefix);
+		void	setRoot(const std::string &path);
+		void	setMethod(const std::string &method);
+		void	setIndex(const std::string &path);
+		void 	setAutoIndex(const std::string &autoIndex);
+		void	setRedirection(const std::string &code, const std::string &url);
+		void	setCgiExtension(const std::string &extension);
+		void	setCgiPath(const std::string &extension, const std::string &path);
+		void	setMaxBodySize(const std::string &size);
 
 		std::string 			getPrefix() const;
 		std::string 			getRoot() const;
@@ -57,8 +57,8 @@ class Location {
 		bool					checkAutoIndex() const;
 		std::pair<int, std::string> &getRedirection();
 		bool 					checkRedirection() const;
-		bool					checkCgiExtension(std::string extension) const;
-		std::string				getCgiPath(std::string extension) const;
+		bool					checkCgiExtension(const std::string &extension) const;
+		std::string				getCgiPath(const std::string &extension) const;
 		size_t					getMaxBodySize() const;
 
 	friend std::ostream &operator<<(std::ostream &out, const Location &location);

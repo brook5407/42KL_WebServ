@@ -6,13 +6,13 @@
 /*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/13 15:50:01 by chchin            #+#    #+#             */
-/*   Updated: 2023/07/06 15:50:30 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/16 14:41:31 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Location.hpp"
 
-int ft_stoi(std::string str)
+int ft_stoi(const std::string &str)
 {
     std::istringstream ss(str);
     int num;
@@ -30,19 +30,19 @@ Location::Location()
 Location::~Location()
 {}
 
-void Location::setPrefix(std::string prefix)
+void Location::setPrefix(const std::string &prefix)
 {
     if (prefix[0] != '/')
         throw ParserError("Invalid prefix in location", prefix);
     this->_prefix = prefix;
 }
 
-void Location::setRoot(std::string path)
+void Location::setRoot(const std::string &path)
 {
     this->_root = path;
 }
 
-void Location::setMethod(std::string method)
+void Location::setMethod(const std::string &method)
 {
     if (method.compare("GET") && 
 		method.compare("POST") && 
@@ -53,12 +53,12 @@ void Location::setMethod(std::string method)
 	_methods.insert(method);
 }
 
-void Location::setIndex(std::string path)
+void Location::setIndex(const std::string &path)
 {
     this->_index.push_back(path);
 }
 
-void Location::setAutoIndex(std::string autoIndex)
+void Location::setAutoIndex(const std::string &autoIndex)
 {
     if (autoIndex == "on")
         this->_autoIndex = true;
@@ -68,7 +68,7 @@ void Location::setAutoIndex(std::string autoIndex)
         throw ParserError("Invalid autoindex in location", autoIndex);
 }
 
-void Location::setRedirection(std::string code, std::string url)
+void Location::setRedirection(const std::string &code, const std::string &url)
 {
     if (code != "301" && code != "302" && code != "303" && code != "307" && code != "308")
         throw ParserError("Invalid redirection code in location", code);
@@ -77,21 +77,21 @@ void Location::setRedirection(std::string code, std::string url)
     this->_isRedirected = true;
 }
 
-void Location::setCgiExtension(std::string extension)
+void Location::setCgiExtension(const std::string &extension)
 {
     if (!checkCgiExtension(extension))
         throw ParserError("Invalid Cgi extension", extension);
     this->_cgiExtension.push_back(extension);
 }
 
-void Location::setCgiPath(std::string extension, std::string path)
+void Location::setCgiPath(const std::string &extension, const std::string &path)
 {
     if (!checkCgiExtension(extension))
         throw ParserError("Invalid Cgi extension", extension);
     this->_cgiPath[extension] = path;
 }
 
-void Location::setMaxBodySize(std::string size)
+void Location::setMaxBodySize(const std::string &size)
 {
     size_t last_pos = size.size() - 1;
     if (size == "0")
@@ -148,14 +148,14 @@ bool Location::checkRedirection() const
     return (this->_isRedirected);
 }
 
-bool Location::checkCgiExtension(std::string extension) const
+bool Location::checkCgiExtension(const std::string &extension) const
 {
     if (extension[0] != '.')
         return (false);
     return (true);
 }
 
-std::string Location::getCgiPath(std::string extension) const
+std::string Location::getCgiPath(const std::string &extension) const
 {
     if (this->_cgiPath.find(extension) != this->_cgiPath.end())
         return (this->_cgiPath.find(extension)->second);

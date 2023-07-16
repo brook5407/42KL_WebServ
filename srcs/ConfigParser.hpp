@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigParser.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kishyan <kishyan@student.42.fr>            +#+  +:+       +#+        */
+/*   By: chchin <chchin@student.42kl.edu.my>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/19 23:41:40 by chchin            #+#    #+#             */
-/*   Updated: 2023/07/03 14:52:54 by chchin           ###   ########.fr       */
+/*   Updated: 2023/07/16 14:49:13 by chchin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,10 +28,11 @@ class ConfigParser
         ~ConfigParser();
         
         void    parseConfig(std::vector<std::string> &config);
-        void    parseServer(conf_t &line_pos, conf_t end);
-        Location parseLocation(conf_t &line_pos, conf_t end);
+        void    parseServer(conf_t &line_pos, const conf_t &end);
+        Location parseLocation(conf_t &line_pos, const conf_t &end);
 
         void    checkServer();
+        bool    checkLastNonSpaceCharacter(const std::string &str);
 
         std::vector<Server>   &getServers();
         
