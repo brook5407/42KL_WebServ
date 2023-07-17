@@ -46,7 +46,9 @@ void	CGI::_execute_cgi(const std::string &body)
 	{
 		file_in = tmpfile();
 		file_in_fd = fileno(file_in);
-		write(file_in_fd, body.c_str(), body.size());
+		int check = write(file_in_fd, body.c_str(), body.size());
+		if (check < 0)
+			throw CGIException();
 		lseek(file_in_fd, 0, SEEK_SET);
 
 		if (dup2(file_out_fd, STDOUT_FILENO) == -1)
@@ -63,7 +65,6 @@ void	CGI::_execute_cgi(const std::string &body)
 		perror("execve");
 		delete [] arguments;
 		delete [] envp;
-		// std::cout << "execve failed" << std::endl;
 		exit(1);
 	}
 }
