@@ -34,8 +34,8 @@ static void on_sigchld(int)
     }
 }
 
-Webserver::Webserver(const std::string &config_filepath):
-    _config(config_filepath)
+Webserver::Webserver(const std::string &config_filepath, int cgi_timeout):
+    _config(config_filepath), _cgi_timeout(cgi_timeout)
 {
 }
 
@@ -93,7 +93,7 @@ void Webserver::internal_loop(void)
             FD_SET(*fd_it, &readfds);
         }
 
-        Singleton<CGIHandler>::get_instance().timeout(120);
+        Singleton<CGIHandler>::get_instance().timeout(_cgi_timeout);
 
         for (conn_it = _client_connections.begin(); conn_it != _client_connections.end();)
         {

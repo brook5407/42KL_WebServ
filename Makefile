@@ -37,6 +37,7 @@ all: $(NAME) $(OBJDIR)
 clean:
 	$(RM) $(OBJFILES) $(DEPFILES)
 	rm -rf $(OBJDIR)
+	rm -rf test/test_config.o test/test_config.d
 
 fclean: clean
 	$(RM) $(NAME)
@@ -59,7 +60,7 @@ testx: $(NAME)
 
 test: $(NAME) tester make_test_dir make_test_conf test_config_run test_cases
 	pkill $(NAME) || true
-	./$(NAME) YoupiBanane.conf 2>&1 > webserv.log &
+	./$(NAME) YoupiBanane.conf 120 2>&1 > webserv.log &
 	time ./tester http://localhost:$(PORT) || bash -c "time ./ubuntu_tester http://localhost:$(PORT)"
 
 tester:
@@ -183,7 +184,7 @@ test_cases:
 	&& curl -v localhost:8080/cookie/cookie.py 2>&1 | grep "403 Forbidden" \
 	&& curl -v localhost:8080/cookie/file_does_not_exist.sh 2>&1 | grep "404 Not Found" \
 	&& curl -v localhost:8080/cookie/non_executable.sh 2>&1 | grep "hello" \
-	# && curl -v localhost:8080/cookie/timeout.sh 2>&1 | grep "Process has timed out" \
+	&& curl -v localhost:8080/cookie/timeout.sh 2>&1 | grep "Process has timed out" \
 	&& curl -v localhost:8080/cookie/test_envp.sh 2>&1 | grep "PWD" \
 	&& curl -v localhost:8080/cookie/cookie.sh?query=string 2>&1 | grep "QUERY_STRING=query=string" \
 	&& curl -v -X POST -d "check=input" localhost:8080/cookie/test_input.sh 2>&1 | grep "Input: check=input" \

@@ -13,7 +13,7 @@
 class Webserver
 {
     public:
-        Webserver(const std::string &config_filepath);
+        Webserver(const std::string &config_filepath, int cgi_timeout);
         void loop(void);
 
     private:
@@ -24,6 +24,7 @@ class Webserver
         Pipeline        _pipeline;
         t_sockets       _server_sockets;
         t_connections   _client_connections;
+        int             _cgi_timeout;
 
         Webserver(void);
         void        init_server_ports(void);
