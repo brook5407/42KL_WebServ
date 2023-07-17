@@ -10,7 +10,7 @@ int main(int argc, char **argv)
     {
         if (argc >= 2)
             config_filepath = argv[1];
-        else if (argc == 3)
+        if (argc == 3)
         {
             cgi_timeout = std::atoi(argv[2]);
             if (cgi_timeout < 1 || cgi_timeout > 3600)
