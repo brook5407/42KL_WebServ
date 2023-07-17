@@ -72,7 +72,7 @@ tester:
 make_test_dir:
 	mkdir -p YoupiBanane
 	echo z > YoupiBanane/youpi.bad_extension 
-	touch YoupiBanane/youpi.bla
+	touch YoupiBanane/youpi.bla YoupiBanane/youpla.bla
 	mkdir -p YoupiBanane/nop
 	touch YoupiBanane/nop/youpi.bad_extension YoupiBanane/nop/other.pouic
 	mkdir -p YoupiBanane/Yeah
