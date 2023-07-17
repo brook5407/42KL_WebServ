@@ -50,13 +50,13 @@ class Server {
 		void	defaultErrorPages();
 		void	setMimeType(const std::string &extension, const std::string &type);
 
-		std::vector<std::string>	&getNames();
-		std::string					getHost() const;
-		size_t						getPort() const;
-		std::string					getErrorPagePath(int error_code) const;
-		size_t						getMaxBodySize() const;
-		std::vector<Location>		&getRoutes();
-		MimeType					&getMimeTypes();
+		const std::vector<std::string>	&getNames() const;
+		const std::string				&getHost() const;
+		size_t							getPort() const;
+		std::string						getErrorPagePath(int error_code) const;
+		size_t							getMaxBodySize() const;
+		const std::vector<Location>		&getRoutes() const;
+		const MimeType					&getMimeTypes() const;
 
 		bool checkDigit(const std::string &str);
 		bool checkIP(const std::string &str);

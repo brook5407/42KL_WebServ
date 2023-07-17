@@ -113,22 +113,22 @@ void Location::setMaxBodySize(const std::string &size)
         throw ParserError("Invalid max body size in location", size);
 }
 
-std::string Location::getPrefix() const
+const std::string &Location::getPrefix() const
 {
     return (this->_prefix);
 }
 
-std::string Location::getRoot() const
+const std::string &Location::getRoot() const
 {
     return (this->_root);
 }
 
-std::set<std::string> &Location::getMethods()
+const std::set<std::string> &Location::getMethods() const
 {
     return (this->_methods);
 }
 
-std::vector<std::string> &Location::getIndex()
+const std::vector<std::string> &Location::getIndex() const
 {
     return (this->_index);
 }
@@ -138,7 +138,7 @@ bool Location::checkAutoIndex() const
     return (this->_autoIndex);
 }
 
-std::pair<int, std::string> &Location::getRedirection()
+const std::pair<int, std::string> &Location::getRedirection() const
 {
     return (this->_redirection);
 }

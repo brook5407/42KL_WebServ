@@ -50,16 +50,16 @@ class Location {
 		void	setCgiPath(const std::string &extension, const std::string &path);
 		void	setMaxBodySize(const std::string &size);
 
-		std::string 			getPrefix() const;
-		std::string 			getRoot() const;
-		std::set<std::string>	&getMethods();
-		std::vector<std::string>&getIndex();
-		bool					checkAutoIndex() const;
-		std::pair<int, std::string> &getRedirection();
-		bool 					checkRedirection() const;
-		bool					checkCgiExtension(const std::string &extension) const;
-		std::string				getCgiPath(const std::string &extension) const;
-		size_t					getMaxBodySize() const;
+		const std::string 					&getPrefix() const;
+		const std::string 					&getRoot() const;
+		const std::set<std::string>			&getMethods() const;
+		const std::vector<std::string>		&getIndex() const;
+		bool								checkAutoIndex() const;
+		const std::pair<int, std::string>	&getRedirection() const;
+		bool 								checkRedirection() const;
+		bool								checkCgiExtension(const std::string &extension) const;
+		std::string							getCgiPath(const std::string &extension) const;
+		size_t								getMaxBodySize() const;
 
 	friend std::ostream &operator<<(std::ostream &out, const Location &location);
 };

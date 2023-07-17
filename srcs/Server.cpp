@@ -115,11 +115,11 @@ void    Server::defaultErrorPages() {
         _errorPages.insert(std::pair<int, std::string>(505, "error_pages/501.html"));
 }
 
-std::vector<std::string> &Server::getNames(){
+const std::vector<std::string> &Server::getNames() const {
     return (this->_names);
 }
 
-std::string Server::getHost() const {
+const std::string &Server::getHost() const {
     return (this->_host);
 }
 
@@ -137,11 +137,11 @@ size_t Server::getMaxBodySize() const {
     return (this->_maxBodySize);
 }
 
-std::vector<Location> &Server::getRoutes() {
+const std::vector<Location> &Server::getRoutes() const {
     return (this->_routes);
 }
 
-MimeType &Server::getMimeTypes() {
+const MimeType &Server::getMimeTypes() const {
     return (this->_mimeTypes);
 }
 
