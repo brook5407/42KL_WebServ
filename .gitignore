@@ -7,5 +7,6 @@ YoupiBanane/
 *.log
 *.raw
 webserv
+test_config
 *tester
 YoupiBanane.conf
