@@ -93,8 +93,8 @@ void Webserver::internal_loop(void)
             FD_SET(*fd_it, &readfds);
         }
 
-        Singleton<CGIHandler>::get_instance().timeout(5);
-    
+        Singleton<CGIHandler>::get_instance().timeout(120);
+
         for (conn_it = _client_connections.begin(); conn_it != _client_connections.end();)
         {
             if (conn_it->status() == CLOSED || conn_it->is_timeout(CONNECTION_TIMEOUT_SEC))
@@ -142,7 +142,7 @@ static int create_listen_socket(const char *address_str, int port)
         throw std::runtime_error(strerror(errno));
     if ((listen_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
         throw std::runtime_error(strerror(errno));
-    if (setsockopt(listen_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)  
+    if (setsockopt(listen_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
         throw std::runtime_error(strerror(errno));
     if (bind(listen_socket, (struct sockaddr *)&address, sizeof(address)) < 0)
         throw std::runtime_error(strerror(errno));

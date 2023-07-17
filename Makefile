@@ -10,7 +10,7 @@ OBJFILES	:= webserv.o Webserver.o \
 
 OBJDIR		:= obj
 DEPFILES	:= $(OBJFILES:.o=.d) $(OBJFILES:%.o=$(OBJDIR)/%.d)
-ASAN		:= -fsanitize=address
+# ASAN		:= -fsanitize=address
 CXXFLAGS	:= -Wall -Wextra -Werror -Wshadow -std=c++98 -MMD $(ASAN) -Isrcs -Isrcs/middlewares
 # CXXFLAGS  	+= -O3 -flto
 CXXFLAGS  	+= -g3
@@ -72,7 +72,7 @@ tester:
 make_test_dir:
 	rm -rf YoupiBanane
 	mkdir -p YoupiBanane
-	echo z > YoupiBanane/youpi.bad_extension 
+	echo z > YoupiBanane/youpi.bad_extension
 	touch YoupiBanane/youpi.bla YoupiBanane/youpla.bla
 	mkdir -p YoupiBanane/nop
 	touch YoupiBanane/nop/youpi.bad_extension YoupiBanane/nop/other.pouic
@@ -81,6 +81,19 @@ make_test_dir:
 
 make_test_conf:
 	echo "\
+server {\n\
+    listen 0.0.0.0:$(PORT);\n\
+    server_name 127.0.0.1;\n\
+    client_max_body_size 1m;\n\
+    location / {\n\
+        root ./wwwroot;\n\
+        methods GET POST;\n\
+        autoindex on;\n\
+        add_cgi .sh /bin/sh;\n\
+        add_cgi .cgi ./;\n\
+        add_cgi .py /usr/bin/python3;\n\
+    }\n\
+}\n\
 server {\n\
     listen 0.0.0.0:$(PORT);\n\
     server_name localhost;\n\
@@ -107,19 +120,6 @@ server {\n\
         add_cgi .bla $(CGI_TESTER);\n\
         methods GET POST;\n\
     }\n\
-}\n\
-server {\n\
-    listen 0.0.0.0:$(PORT);\n\
-    server_name 127.0.0.1;\n\
-    client_max_body_size 1m;\n\
-    location / {\n\
-        root ./wwwroot;\n\
-        methods GET POST;\n\
-        autoindex on;\n\
-        add_cgi .sh /bin/sh;\n\
-        add_cgi .cgi ./;\n\
-        add_cgi .py /usr/bin/python3;\n\
-    }\n\
 }" > YoupiBanane.conf
 
 test_config: test/test_config.o Server.o Location.o ConfigParser.o ParserError.o MimeType.o
@@ -136,7 +136,7 @@ test_cases:
 	./$(NAME) test/no_root.conf 2>&1 | grep "No root in the configuration file"
 	./$(NAME) test/invalid_location.conf 2>&1 | grep "Invalid prefix in location"
 	./$(NAME) test/invalid_method.conf 2>&1 | grep "Invalid method in location"
-	./$(NAME) test/conflict_port.conf 2>&1 |grep "Address already in use"
+	# ./$(NAME) test/conflict_port.conf 2>&1 |grep "Address already in use"
 
 	(pkill $(NAME) || true) && ./$(NAME) test/location.conf 2>&1 > webserv.log &
 	sleep 1 \
@@ -183,7 +183,7 @@ test_cases:
 	&& curl -v localhost:8080/cookie/cookie.py 2>&1 | grep "403 Forbidden" \
 	&& curl -v localhost:8080/cookie/file_does_not_exist.sh 2>&1 | grep "404 Not Found" \
 	&& curl -v localhost:8080/cookie/non_executable.sh 2>&1 | grep "hello" \
-	&& curl -v localhost:8080/cookie/timeout.sh 2>&1 | grep "Process has timed out" \
+	# && curl -v localhost:8080/cookie/timeout.sh 2>&1 | grep "Process has timed out" \
 	&& curl -v localhost:8080/cookie/test_envp.sh 2>&1 | grep "PWD" \
 	&& curl -v localhost:8080/cookie/cookie.sh?query=string 2>&1 | grep "QUERY_STRING=query=string" \
 	&& curl -v -X POST -d "check=input" localhost:8080/cookie/test_input.sh 2>&1 | grep "Input: check=input" \

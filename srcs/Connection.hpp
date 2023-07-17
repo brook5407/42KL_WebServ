@@ -6,7 +6,8 @@
 #include <fstream>
 #include <iostream>
 
-#define BUFFER_SIZE 1 * 1024 * 1024
+// #define BUFFER_SIZE 1 * 1024 * 1024
+#define BUFFER_SIZE 8 * 1024
 enum CONNECTION_STATUS {READING, SENDING, CLOSED, WAITING};
 
 class Connection
@@ -17,17 +18,17 @@ class Connection
             _status(READING), _last_activity(time(NULL)), _keep_alive(true)
             {}
         Connection(const Connection &other)
-            : _request_buffer(),  _ifile(), 
-            _server_port(other._server_port), 
+            : _request_buffer(),  _ifile(),
+            _server_port(other._server_port),
             _server_ip(other._server_ip),
             _client_port(other._client_port),
             _client_ip(other._client_ip),
             _in_fd(other._in_fd),
-            _response_buffer(),_fd(other._fd), 
+            _response_buffer(),_fd(other._fd),
             _status(other._status), _last_activity(other._last_activity),
             _keep_alive(other._keep_alive)
             {
-            } 
+            }
         Connection(int fd)
             : _request_buffer(), _ifile(), _in_fd(-1), _response_buffer(), _fd(fd), _status(READING),
             _last_activity(time(NULL)), _keep_alive(true)

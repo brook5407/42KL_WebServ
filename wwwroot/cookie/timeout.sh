@@ -1,2 +1,2 @@
-sleep 10
+sleep 150
 echo you shouldnt see this
