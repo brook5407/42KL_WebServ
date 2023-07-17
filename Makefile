@@ -70,6 +70,7 @@ tester:
 	chmod +x tester ubuntu_cgi_tester cgi_tester ubuntu_tester
 
 make_test_dir:
+	rm -rf YoupiBanane
 	mkdir -p YoupiBanane
 	echo z > YoupiBanane/youpi.bad_extension 
 	touch YoupiBanane/youpi.bla YoupiBanane/youpla.bla

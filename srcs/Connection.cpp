@@ -5,6 +5,7 @@
 #include <sstream>
 
     //Connection: Keep-Alive | Keep-Alive: timeout=5, max=1000 | Connection: close
+static char _buffer[BUFFER_SIZE];
 
 static unsigned long get_nanosecond()
 {
@@ -28,15 +29,12 @@ static std::string format_nanosecond(double nanoseconds)
     return ss.str();
 }
 
-char _buffer[BUFFER_SIZE] = {};
-
-
 void Connection::read()
 {
     _last_activity = time(NULL);
     // if (_status != READING)
     // {
-    //     std::cout << "invalid status, expected READING. request-size:" << _in_buffer.size() << std::endl;
+    //     std::cout << "invalid status, expected READING. request-size:" << _request_buffer.size() << std::endl;
     //     // throw std::runtime_error("invalid status, expected READING");
     //     return;
     // }
@@ -47,9 +45,9 @@ void Connection::read()
         _close();
         return;
     }
-    if (_in_buffer.empty())
+    if (_request_buffer.empty())
         _start_time = get_nanosecond();
-    _in_buffer += std::string(_buffer, length);
+    _request_buffer += std::string(_buffer, length);
     // std::cout << "read " << length << " bytes from " << _fd <<  std::endl;
 }
 
@@ -57,33 +55,33 @@ void Connection::write(const std::string &data)
 {
     // if (_status != READING)
     // {
-    //     std::cout << "existing " << _out_buffer << std::endl << "===" << data << std::endl;
+    //     std::cout << "existing " << _response_buffer << std::endl << "===" << data << std::endl;
     //     throw std::runtime_error("invalid status, expected READING ");
     // }
-    _out_buffer += data;
+    _response_buffer += data;
     _status = SENDING;
 }
 
 void Connection::transmit()
 {
     _last_activity = time(NULL);
-    _status = SENDING;
+    // _status = SENDING;
     // if (_status != READ && _status != SENDING)
     //     throw std::runtime_error("invalid status, expected READ or SENDING");
 
-    if (!_out_buffer.empty())
+    if (!_response_buffer.empty())
     {
-        int length = send(_fd, _out_buffer.c_str(), std::min((size_t)BUFFER_SIZE, _out_buffer.size()), 0);
+        int length = send(_fd, _response_buffer.c_str(), std::min((size_t)BUFFER_SIZE, _response_buffer.size()), 0);
         if (length < 1)
         {
             _close();
             return;
         }
         // std::cout << "SENT " << length << " to " << _fd <<  std::endl;
-        _out_buffer.erase(0, length);
+        _response_buffer.erase(0, length);
 
         //stop sending when buffer sent and no file to send
-        if (_out_buffer.empty() && !_ifile.is_open() && _in_fd == -1)
+        if (_response_buffer.empty() && !_ifile.is_open() && _in_fd == -1)
             on_send_complete();
     }
     else
@@ -161,11 +159,6 @@ void Connection::on_send_complete()
         _close();
 }
 
-void Connection::except()
-{
-    std::cout << "except" << std::endl;
-}
-
 void Connection::_close()
 {
     if (_fd > 0)
@@ -221,9 +214,10 @@ void Connection::get_details(int connection_socket) {
 
 std::ostream& operator<<(std::ostream& os, const Connection& connection)
 {
-    os << "Connection #" << connection._fd << " "
-     << connection._client_ip << ":" << connection._client_port 
-     << (connection._status == READING? " > ": connection._status == SENDING? " < ": " - ")
-     << connection._server_ip << ":" << connection._server_port;
+    os
+        << "Connection #" << connection._fd << " "
+        << connection._client_ip << ":" << connection._client_port 
+        << (connection._status == READING? " > ": connection._status == SENDING? " < ": " - ")
+        << connection._server_ip << ":" << connection._server_port;
     return os;
 }

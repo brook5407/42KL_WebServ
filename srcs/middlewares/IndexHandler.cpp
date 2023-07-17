@@ -4,18 +4,18 @@
 
 void IndexHandler::execute(Request &req, Response &res)
 {
-    DIR *dir = opendir(req._script_name.c_str());
+    DIR *dir = opendir(req.get_translated_path().c_str());
     if (dir)
     {
         closedir(dir);
 
-        for (std::size_t i = 0; i < req._location_config->getIndex().size(); ++i)
+        for (std::size_t i = 0; i < req.get_location_config().getIndex().size(); ++i)
         {
-            const std::string &filename = req._location_config->getIndex()[i];
-            const std::string index_filepath = Util::combine_path(req._script_name, filename);
+            const std::string &filename = req.get_location_config().getIndex()[i];
+            const std::string index_filepath = Util::combine_path(req.get_translated_path(), filename);
             if (Util::file_exists(index_filepath))
             {
-                req._script_name = index_filepath;
+                req.set_translated_path(index_filepath);
                 break;
             }
         }

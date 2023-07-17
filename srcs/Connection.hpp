@@ -13,24 +13,23 @@ class Connection
 {
     public:
         Connection() :
-            _in_buffer(),  _ifile(), _server_port(), _in_fd(-1), _out_buffer(), _fd(0),
+            _request_buffer(),  _ifile(), _server_port(), _in_fd(-1), _response_buffer(), _fd(0),
             _status(READING), _last_activity(time(NULL)), _keep_alive(true)
             {}
         Connection(const Connection &other)
-            : _in_buffer(),  _ifile(), 
+            : _request_buffer(),  _ifile(), 
             _server_port(other._server_port), 
             _server_ip(other._server_ip),
             _client_port(other._client_port),
             _client_ip(other._client_ip),
             _in_fd(other._in_fd),
-            _out_buffer(),_fd(other._fd), 
+            _response_buffer(),_fd(other._fd), 
             _status(other._status), _last_activity(other._last_activity),
             _keep_alive(other._keep_alive)
             {
-
             } 
         Connection(int fd)
-            : _in_buffer(), _ifile(), _in_fd(-1), _out_buffer(), _fd(fd), _status(READING),
+            : _request_buffer(), _ifile(), _in_fd(-1), _response_buffer(), _fd(fd), _status(READING),
             _last_activity(time(NULL)), _keep_alive(true)
             {
                 get_details(fd);
@@ -43,7 +42,6 @@ class Connection
 
         int fd() const { return _fd; }
         bool is_timeout(int sec);
-        void except();
         void transmit();
         void write(const std::string &data);
         void read();
@@ -52,7 +50,7 @@ class Connection
         void set_keep_alive(bool keep_alive) { _keep_alive = keep_alive; }
         bool keep_alive() const { return _keep_alive; }
 
-        std::string _in_buffer;
+        std::string _request_buffer;
         std::ifstream _ifile;
         int _server_port;
         std::string _server_ip;
@@ -65,7 +63,7 @@ class Connection
         void _close();
         void transmit_file();
 
-        std::string _out_buffer;
+        std::string _response_buffer;
         int _fd;
         enum CONNECTION_STATUS _status;
         time_t _last_activity;

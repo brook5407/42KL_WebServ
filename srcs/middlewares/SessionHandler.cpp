@@ -1,25 +1,33 @@
 #include "SessionHandler.hpp"
 #include "Util.hpp"
+#include <cstdlib>
 
 void SessionHandler::execute(Request &req, Response &res)
 {
-	current_session_ID = extract_cookie(req._headers["Cookie"], "ID");
-	if (current_session_ID.empty())
+	_current_session_ID = extract_cookie(req.get_header("Cookie"), "ID");
+	if (_current_session_ID.empty())
 	{
-		current_session_ID = Util::to_string(rand());
-		res.set_header("Set-Cookie", "ID=" + current_session_ID);
+		_current_session_ID = Util::to_string(rand());
+		res.set_header("Set-Cookie", "ID=" + _current_session_ID);
 	}
 	Middleware::execute(req, res);
 }
 
-const std::string &SessionHandler::get_session()
+std::string SessionHandler::get_session() const
 {
-	return _session[current_session_ID];
+	try
+	{
+		return _sessions.at(_current_session_ID);
+	}
+	catch (...)
+	{
+		return std::string();
+	}
 }
 
 const std::string &SessionHandler::get_session_id() const
 {
-	return current_session_ID;
+	return _current_session_ID;
 }
 
 std::string SessionHandler::extract_cookie(const std::string &cookies, const std::string &cookie_name)
@@ -27,23 +35,27 @@ std::string SessionHandler::extract_cookie(const std::string &cookies, const std
 	std::size_t begin = cookies.find(cookie_name + "=");
 	if (begin == std::string::npos)
 		return std::string();
-	begin =+ cookie_name.size() + 1;
-	std::size_t end = cookies.find(';', begin);
-	const std::string cookie_value = cookies.substr(begin, end - begin);
-	return cookie_value;
+	begin += cookie_name.size() + 1;
+	const std::size_t end = cookies.find(';', begin);
+	if (end == std::string::npos)
+		return cookies.substr(begin);
+	else
+		return cookies.substr(begin, end - begin);
 }
 
 void SessionHandler::set_session(const std::string &session_id, const std::string &new_value)
 {
-	_session[session_id] = new_value;
+	_sessions[session_id] = new_value;
 }
 
 bool SessionHandler::parse_session(const std::string &session_id, const std::string &cgi_response_header)
 {
-	char session_key[] = "X-Replace-Session:";
-	if (cgi_response_header.find(session_key) == 0)
+	const char 		session_key[] = "X-Replace-Session: ";
+	const size_t	len = sizeof(session_key) - 1; // exclude null-terminator
+
+	if (cgi_response_header.compare(0, len, session_key) == 0)
 	{
-		set_session(session_id, cgi_response_header.substr(sizeof(session_key)));
+		set_session(session_id, cgi_response_header.substr(len));
 		return true;
 	}
 	return false;

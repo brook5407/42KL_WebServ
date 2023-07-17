@@ -2,9 +2,6 @@
 #define RESPONSE_HPP
 
 #include "Connection.hpp"
-#include <sys/stat.h>
-#include <ctime>
-#include <algorithm>
 #include <map>
 
 class Response
@@ -25,10 +22,11 @@ class Response
         }
 
         Connection &_connection;
-        std::map<std::string, std::string> _headers;
-    private:
 
-        void add_header(std::stringstream &ss, int status_code);
+    private:
+        std::map<std::string, std::string> _headers;
+        Response(void);
+        void add_response_header(std::stringstream &ss, int status_code);
         void end(std::stringstream &ss);
 };
 

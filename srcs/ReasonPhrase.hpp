@@ -1,7 +1,7 @@
 #ifndef REASONPHRASE_HPP
 # define REASONPHRASE_HPP
 
-#include <map>
+# include <map>
 
 class ReasonPhrase: public std::map<int, const char *>
 {

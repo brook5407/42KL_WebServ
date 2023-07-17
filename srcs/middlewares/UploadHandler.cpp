@@ -11,15 +11,15 @@ static bool checkMultiPart(const std::string &content_type);
 // todo think about http response status code for different failures
 void UploadHandler::execute(Request &req, Response &res)
 {
-    if (req._method == "POST" && checkMultiPart(req._headers["Content-Type"]) )
+    if (req.get_method() == "POST" && checkMultiPart(req.get_header("Content-Type")) )
     {
         //get boundary information for headers
-        std::string content_type = req._headers["Content-Type"];
+        const std::string &content_type = req.get_header("Content-Type");
         std::string::size_type pos = content_type.find("boundary=");
         if (pos != std::string::npos)
         {
             std::string boundary = content_type.substr(pos + 9);
-            std::string body = req._body;
+            std::string body = req.get_body();
             // remove last line boundary
             std::string::size_type pos_bd_end = body.find_last_of(boundary);
             body = body.substr(0, pos_bd_end - 4);
@@ -44,7 +44,7 @@ void UploadHandler::execute(Request &req, Response &res)
             if (filename.empty())
                 throw HttpException(400, "Bad Request: filename not found");
             // save file
-            filename = Util::combine_path(req._script_name, filename);
+            filename = Util::combine_path(req.get_translated_path(), filename);
             std::cout << "filename: " << filename << " sz:" << body.size() << std::endl;
             std::ofstream ofs(filename.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
             if (!ofs.is_open())
@@ -58,20 +58,20 @@ void UploadHandler::execute(Request &req, Response &res)
             throw HttpException(400, "Bad Request: boundary not found");
     }
     // for curl & tester, not for browser multipart/form-data
-    else if ((req._method == "POST" || req._method == "PUT"))
+    else if ((req.get_method() == "POST" || req.get_method() == "PUT"))
     {
         //post /dir/<f> , /dir/filename/<f>,  w/wo:Content-Disposition
-        std::string filename = get_filename(req._headers["Content-Disposition"]);
+        std::string filename = get_filename(req.get_header("Content-Disposition"));
         if (filename.size())
-            filename = Util::combine_path(req._script_name, filename); // prefix document root
+            filename = Util::combine_path(req.get_translated_path(), filename); // prefix document root
         else
-            filename = req._script_name;
-        save_file(filename, req._body);
+            filename = req.get_translated_path();
+        save_file(filename, req.get_body());
         res.send_content(200, filename.substr(filename.find_last_of('/') + 1) + " has been uploaded!");
     }
-    else if (req._method == "DELETE")
+    else if (req.get_method() == "DELETE")
     {
-        std::string filename = req._script_name;
+        std::string filename = req.get_translated_path();
         if (filename[filename.size() - 1] == '/')
             filename.erase(filename.size() - 1);
         if (remove(filename.c_str()) == 0)

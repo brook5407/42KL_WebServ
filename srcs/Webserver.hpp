@@ -1,37 +1,35 @@
 #ifndef WEBSERVER_HPP
-#define WEBSERVER_HPP
+# define WEBSERVER_HPP
 
-#define LISTEN_BACKLOG 128
-#define POLL_TIMEOUT_SEC 5
-#define CONNECTION_TIMEOUT_SEC 300
+# define LISTEN_BACKLOG 128
+# define POLL_TIMEOUT_SEC 1
+# define CONNECTION_TIMEOUT_SEC 300
 
-#include "Pipeline.hpp"
-#include "Connection.hpp"
-#include "Server.hpp"
-#include <list>
+# include "Pipeline.hpp"
+# include "Connection.hpp"
+# include "ConfigParser.hpp"
+# include <list>
 
-// todo tele netstat established and connections count
-// todo check netstat browser TIME_WAIT
 class Webserver
 {
-public:
-    Webserver(const std::string &config_filepath);
-    ~Webserver(void);
-    void loop(void);
+    public:
+        Webserver(const std::string &config_filepath);
+        void loop(void);
 
-private:
-    typedef std::list<int> t_listen_sockets;
-    
-    static Webserver *_instance;
+    private:
+        typedef std::list<int>          t_sockets;
+        typedef std::list<Connection>   t_connections;
 
-    Pipeline _pipeline;
-    std::vector<Server> _serverConfigs;
+        ConfigParser    _config;
+        Pipeline        _pipeline;
+        t_sockets       _server_sockets;
+        t_connections   _client_connections;
 
-    int _create_listen_socket(const char *address, int port);
-    void _loop_sockets(t_listen_sockets &);
-    void _process_request(Connection &connection);
-    static void _on_cgi_exit(int signal);
-
+        Webserver(void);
+        void        init_server_ports(void);
+        void        internal_loop(void);
+        void        accept_client(int socket_fd);
+        void        process_request(Connection &connection);
 };
 
 #endif

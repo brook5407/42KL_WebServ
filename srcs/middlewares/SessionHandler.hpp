@@ -7,14 +7,18 @@ class SessionHandler : public Middleware
 {
     public:
         void execute(Request &req, Response &res);
-        const std::string &get_session();
+        std::string get_session() const;
         const std::string &get_session_id() const;
-        std::string extract_cookie(const std::string &cookies, const std::string &cookie_name);
-        void set_session(const std::string &session_id, const std::string &new_value);
         bool parse_session(const std::string &session_id, const std::string &cgi_response_header);
 
-        std::string current_session_ID;
-        std::map<std::string, std::string> _session;
+    private:
+        typedef std::map<std::string, std::string> t_sessions;
+
+        std::string _current_session_ID;
+        t_sessions  _sessions;
+
+        void set_session(const std::string &session_id, const std::string &new_value);
+        static std::string extract_cookie(const std::string &cookies, const std::string &cookie_name);
 };
 
 #endif

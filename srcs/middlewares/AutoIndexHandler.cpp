@@ -12,13 +12,13 @@ void AutoIndexHandler::execute(Request &req, Response &res)
 {
     DIR *dir;
 
-    if (req._location_config->checkAutoIndex() == false)
+    if (req.get_location_config().checkAutoIndex() == false)
         return Middleware::execute(req, res);
-    dir = opendir(req._script_name.c_str());
+    dir = opendir(req.get_translated_path().c_str());
     if (dir == NULL)
         return Middleware::execute(req, res);
     std::stringstream ss;
-    generate_html(ss, dir, req._uri, req._script_name);
+    generate_html(ss, dir, req.get_uri(), req.get_translated_path());
     closedir(dir);
     res.send_content(200, ss.str());
 }

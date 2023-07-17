@@ -4,35 +4,36 @@
 #include "ReasonPhrase.hpp"
 #include "Util.hpp"
 
-static void generate_html(std::stringstream &ss, int status_code, std::string reason);
+static void generate_html(std::stringstream &ss, int status_code);
 
 void ErrorHandler::execute(Request &req, Response &res)
 {
     try
     {
-        if (!req._location_config->checkRedirection() && req._script_name.empty())
+        if (!req.get_location_config().checkRedirection() && req.get_translated_path().empty())
             throw HttpException(404, "no location matched");
         Middleware::execute(req, res);
     }
     catch (const HttpException &e)
     {
-        const std::string filepath = req._server_config->getErrorPagePath(e.status_code());
+        // std::cerr << "HttpException: " << e.what() << std::endl;
+        const std::string filepath = req.get_server_config().getErrorPagePath(e.status_code());
         if (filepath.size() && Util::file_exists(filepath))
         {
             res.send_error_file(e.status_code(), filepath);
         }
         else
         {
-            std::string reason = Singleton<ReasonPhrase>::get_instance().lookup(e.status_code());
             std::stringstream ss;
-            generate_html(ss, e.status_code(), reason);
+            generate_html(ss, e.status_code());
             res.send_content(e.status_code(), ss.str());
         }
     }
 }
 
-void generate_html(std::stringstream &ss, int status_code, std::string reason)
+void generate_html(std::stringstream &ss, int status_code)
 {
+    const std::string reason = Singleton<ReasonPhrase>::get_instance().lookup(status_code);
     ss << \
         "<!DOCTYPE html>"
         "<html>"

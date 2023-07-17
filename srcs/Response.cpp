@@ -3,6 +3,9 @@
 #include "SessionHandler.hpp"
 #include "ReasonPhrase.hpp"
 #include "Util.hpp"
+#include <sys/stat.h>
+#include <ctime>
+#include <algorithm>
 
 Response::Response(Connection &connection)
 : _connection(connection)
@@ -15,7 +18,7 @@ Response::Response(Response const &src)
 void Response::send_location(int status_code, const std::string &location)
 {
     std::stringstream ss;
-    add_header(ss, status_code);
+    add_response_header(ss, status_code);
     ss << "Location: " << location << "\r\n"
         "Content-Length: 0\r\n"
         "\r\n";
@@ -25,7 +28,7 @@ void Response::send_location(int status_code, const std::string &location)
 void Response::send_content(int status_code, const std::string &data, const std::string &type)
 {
     std::stringstream ss;
-    add_header(ss, status_code);
+    add_response_header(ss, status_code);
     ss << "Content-Length: " << data.size() << "\r\n";
     if (!type.empty())
         ss << "Content-Type: " << type << "\r\n";
@@ -36,7 +39,7 @@ void Response::send_content(int status_code, const std::string &data, const std:
 void Response::send_file(int status_code, const std::string &filepath, const std::string &mimetype)
 {
     std::stringstream ss;
-    add_header(ss, status_code);
+    add_response_header(ss, status_code);
     _connection._ifile.open(filepath.c_str(), std::ios::in | std::ios::binary);
     if (!_connection._ifile.is_open())
     {
@@ -92,7 +95,7 @@ void Response::send_cgi_fd(int fd, const std::string &session_id)
             header_size = it - header + 2;
     }
     std::stringstream ss;
-    add_header(ss, 200); // todo status from stdout
+    add_response_header(ss, 200); // todo status from stdout
     size_t cont_length = fsize - header_size;
     ss << "Content-Length: " << cont_length << "\r\n";
     std::stringstream cgi_ss(std::string(header, read_size));
@@ -117,7 +120,7 @@ void Response::set_keep_alive(bool keep_alive)
     _connection.set_keep_alive(keep_alive);
 }
 
-void Response::add_header(std::stringstream &ss, int status_code)
+void Response::add_response_header(std::stringstream &ss, int status_code)
 {
     ss  << "HTTP/1.1 "
         << status_code << ' '
@@ -134,5 +137,5 @@ void Response::add_header(std::stringstream &ss, int status_code)
 void Response::end(std::stringstream &ss)
 {
     _connection.write(ss.str());
-    _connection._in_buffer.clear();
+    _connection._request_buffer.clear();
 }

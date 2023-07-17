@@ -1,8 +1,8 @@
 #ifndef MIDDLEWARE_HPP
-#define MIDDLEWARE_HPP
+# define MIDDLEWARE_HPP
 
-#include "Request.hpp"
-#include "Response.hpp"
+# include "Request.hpp"
+# include "Response.hpp"
 
 class Middleware
 {
@@ -10,9 +10,9 @@ class Middleware
         Middleware();
         virtual ~Middleware() = 0;
 
-        virtual void execute(Request &req, Response &res);
-        void setNext(Middleware *next);
-        Middleware *getNext();
+        virtual void    execute(Request &req, Response &res);
+        void            setNext(Middleware *next);
+        Middleware      *getNext();
 
     protected:
         Middleware *_next;
@@ -37,9 +37,7 @@ class KeepAliveHandler: public Middleware
     public:
         void execute(Request &req, Response &res)
         {
-            res.set_keep_alive(
-                !req._headers.count("Connection")
-                || req._headers["Connection"] != "close");
+            res.set_keep_alive(req.get_header("Connection") != "close");
             Middleware::execute(req, res);
         }
 };
