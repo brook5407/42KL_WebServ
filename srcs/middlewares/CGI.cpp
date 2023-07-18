@@ -1,5 +1,5 @@
 #include "CGI.hpp"
-# include <cstdio>
+# include <cstdlib>
 
 CGI::CGI(Response response)
 : child_pid(-1), _response(response), _start_time(time(NULL)), _file_out_fd(-1)

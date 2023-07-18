@@ -2,8 +2,8 @@
 #include "Singleton.hpp"
 #include "SessionHandler.hpp"
 #include "HttpException.hpp"
-#include <signal.h>
 #include "Util.hpp"
+#include <sys/wait.h>
 
 extern char **environ;
 
