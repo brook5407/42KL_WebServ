@@ -13,6 +13,7 @@
 #include <arpa/inet.h>
 #include <list>
 #include <set>
+#include <fcntl.h>
 
 static bool g_exiting = false;
 
@@ -93,11 +94,12 @@ void Webserver::internal_loop(void)
             FD_SET(*fd_it, &readfds);
         }
 
+        on_sigchld(0);
         Singleton<CGIHandler>::get_instance().timeout(_cgi_timeout);
 
         for (conn_it = _client_connections.begin(); conn_it != _client_connections.end();)
         {
-            if (conn_it->status() == CLOSED || conn_it->is_timeout(CONNECTION_TIMEOUT_SEC))
+            if (conn_it->status() == DISCONNECTED || conn_it->is_timeout(CONNECTION_TIMEOUT_SEC))
             {
                 conn_it = _client_connections.erase(conn_it);
             }
@@ -112,8 +114,10 @@ void Webserver::internal_loop(void)
             }
         }
 
+        signal(SIGCHLD, on_sigchld);
         if (select(++max_fd, &readfds, &writefds, NULL, _client_connections.empty()? NULL: &timeout) <= 0)
             continue;
+        signal(SIGCHLD, SIG_IGN);
         for (conn_it = _client_connections.begin(); conn_it != _client_connections.end(); ++conn_it)
         {
             if (FD_ISSET(conn_it->fd(), &writefds))
@@ -176,7 +180,6 @@ void Webserver::loop(void)
     signal(SIGPIPE, SIG_IGN); // writing to closed socket, or send(MSG_NOSIGNAL)
     signal(SIGINT, SIG_IGN);
     signal(SIGINT, on_sigint);
-    signal(SIGCHLD, on_sigchld);
 
     init_server_ports();
     internal_loop();

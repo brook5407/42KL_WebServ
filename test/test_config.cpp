@@ -18,11 +18,11 @@ int main(int argc, char **argv)
         std::vector<Server>   servers = parser.getServers();
         for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); it++)
             std::cout << *it << std::endl;
-        system("leaks -q a.out");
+        system("leaks -q test_config");
     }
     catch(const std::exception& e)
     {
         std::cerr << e.what() << std::endl;
-        system("leaks -q a.out");
+        system("leaks -q test_config");
     }
 }

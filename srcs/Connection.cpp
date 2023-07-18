@@ -4,7 +4,6 @@
 #include <arpa/inet.h>
 #include <sstream>
 
-    //Connection: Keep-Alive | Keep-Alive: timeout=5, max=1000 | Connection: close
 static char _buffer[BUFFER_SIZE];
 
 static unsigned long get_nanosecond()
@@ -29,6 +28,33 @@ static std::string format_nanosecond(double nanoseconds)
     return ss.str();
 }
 
+std::size_t Connection::next_connection_id(void)
+{
+    static std::size_t id = 0;
+    return ++id;
+}
+
+Connection::Connection(const Connection &other)
+: _request_buffer(),  _ifile(),
+_server_port(other._server_port),
+_server_ip(other._server_ip),
+_client_port(other._client_port),
+_client_ip(other._client_ip),
+_in_fd(other._in_fd),
+_response_buffer(),_fd(other._fd),
+_status(other._status), _last_activity(other._last_activity),
+_keep_alive(other._keep_alive),
+_id(next_connection_id())
+{
+}
+
+Connection::Connection(int fd)
+: _request_buffer(), _ifile(), _in_fd(-1), _response_buffer(), _fd(fd), _status(READING),
+_last_activity(time(NULL)), _keep_alive(true), _id(0)
+{
+    get_details(fd);
+}
+
 void Connection::read()
 {
     _last_activity = time(NULL);
@@ -42,7 +68,7 @@ void Connection::read()
     int length = recv(_fd, _buffer, sizeof(_buffer), 0); //MSG_NOSIGNAL
     if (length < 1)
     {
-        _close();
+        disconnect();
         return;
     }
     if (_request_buffer.empty())
@@ -58,7 +84,7 @@ void Connection::write(const std::string &data)
     //     std::cout << "existing " << _response_buffer << std::endl << "===" << data << std::endl;
     //     throw std::runtime_error("invalid status, expected READING ");
     // }
-    _response_buffer += data;
+    _response_buffer = data;
     _status = SENDING;
 }
 
@@ -74,7 +100,7 @@ void Connection::transmit()
         int length = send(_fd, _response_buffer.c_str(), std::min((size_t)BUFFER_SIZE, _response_buffer.size()), 0);
         if (length < 1)
         {
-            _close();
+            disconnect();
             return;
         }
         // std::cout << "SENT " << length << " to " << _fd <<  std::endl;
@@ -112,7 +138,7 @@ void Connection::transmit_file()
         {
             close(_in_fd);
             _in_fd = -1;
-            _close();
+            disconnect();
             return;
         }
         if (sent < sz_read)
@@ -130,7 +156,7 @@ void Connection::transmit_file()
             if (sent < 1)
             {
                 _ifile.close();
-                _close();
+                disconnect();
                 return;
             }
             if (sent < _ifile.gcount())
@@ -152,23 +178,31 @@ void Connection::transmit_file()
 void Connection::on_send_complete()
 {
     static size_t total = 0;
-    std::cout << "Request #" << ++total << " duration: " << format_nanosecond(get_nanosecond() - _start_time) << std::endl;
+    std::cout
+        << "Request #" << ++total
+        << " conn: " << _id
+        // << " keepalive: " << _keep_alive
+        // << " fd: " << _fd
+        << " client: " << _client_ip << ':' << _client_port
+        << " duration: " << format_nanosecond(get_nanosecond() - _start_time)
+        << std::endl;
     if (_keep_alive)
         _status = READING;
     else
-        _close();
+        disconnect();
 }
 
-void Connection::_close()
+void Connection::disconnect(void)
 {
-    if (_fd > 0)
+    if (_fd != -1)
     {
         // shutdown(_fd, SHUT_RDWR);
         close(_fd);
         _fd = -1;
-        _status = CLOSED;
     }
+    _status = DISCONNECTED;
 }
+
 // different timeout for idle, long read, long write?
 bool Connection::is_timeout(int sec)
 {
@@ -176,7 +210,7 @@ bool Connection::is_timeout(int sec)
     if (duration_sec > sec)
     {
         std::cout << "timeout #" << _fd << " after " << duration_sec << std::endl;
-        _close();
+        disconnect();
         return true;
     }
     return false;

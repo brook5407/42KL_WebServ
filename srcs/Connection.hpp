@@ -8,33 +8,13 @@
 
 // #define BUFFER_SIZE 1 * 1024 * 1024
 #define BUFFER_SIZE 8 * 1024
-enum CONNECTION_STATUS {READING, SENDING, CLOSED, WAITING};
+enum CONNECTION_STATUS {READING, SENDING, DISCONNECTED, WAITING};
 
 class Connection
 {
     public:
-        Connection() :
-            _request_buffer(),  _ifile(), _server_port(), _in_fd(-1), _response_buffer(), _fd(0),
-            _status(READING), _last_activity(time(NULL)), _keep_alive(true)
-            {}
-        Connection(const Connection &other)
-            : _request_buffer(),  _ifile(),
-            _server_port(other._server_port),
-            _server_ip(other._server_ip),
-            _client_port(other._client_port),
-            _client_ip(other._client_ip),
-            _in_fd(other._in_fd),
-            _response_buffer(),_fd(other._fd),
-            _status(other._status), _last_activity(other._last_activity),
-            _keep_alive(other._keep_alive)
-            {
-            }
-        Connection(int fd)
-            : _request_buffer(), _ifile(), _in_fd(-1), _response_buffer(), _fd(fd), _status(READING),
-            _last_activity(time(NULL)), _keep_alive(true)
-            {
-                get_details(fd);
-            }
+        Connection(const Connection &other);
+        Connection(int fd);
         ~Connection() { } //close(_fd); // avoid auto-close due to copy
         Connection &operator=(const Connection &)
         {
@@ -47,29 +27,33 @@ class Connection
         void write(const std::string &data);
         void read();
         enum CONNECTION_STATUS &status() { return _status; }
-    	friend std::ostream& operator<<(std::ostream& os, const Connection& connection);
         void set_keep_alive(bool keep_alive) { _keep_alive = keep_alive; }
         bool keep_alive() const { return _keep_alive; }
+    	friend std::ostream& operator<<(std::ostream& os, const Connection& connection);
 
         std::string _request_buffer;
         std::ifstream _ifile;
-        int _server_port;
+        int         _server_port;
         std::string _server_ip;
-        int _client_port;
+        int         _client_port;
         std::string _client_ip;
-        int _in_fd;
+        int         _in_fd;
+
     private:
+        Connection(void);
+        size_t next_connection_id(void);
         void get_details(int connection_socket);
         void on_send_complete(void);
-        void _close();
-        void transmit_file();
+        void disconnect(void);
+        void transmit_file(void);
 
-        std::string _response_buffer;
-        int _fd;
-        enum CONNECTION_STATUS _status;
-        time_t _last_activity;
-        unsigned long _start_time;
-        bool _keep_alive;
+        std::string             _response_buffer;
+        int                     _fd;
+        enum CONNECTION_STATUS  _status;
+        time_t                  _last_activity;
+        unsigned long           _start_time;
+        bool                    _keep_alive;
+        const std::size_t       _id;
 };
 
 #endif

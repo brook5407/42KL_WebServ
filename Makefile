@@ -58,16 +58,16 @@ testx: $(NAME)
 	curl -v -F key1=value1 -F upload=@Makefile localhost:9999 -v
 	@echo PING | nc localhost $(PORT)
 
-test: $(NAME) tester make_test_dir make_test_conf test_config_run test_cases
+test: $(NAME) make_test_dir make_test_conf test_config_run test_cases
 	pkill $(NAME) || true
-	./$(NAME) YoupiBanane.conf 120 2>&1 > webserv.log &
+	./$(NAME) YoupiBanane.conf 180 2>&1 > webserv.log &
 	time ./tester http://localhost:$(PORT) || bash -c "time ./ubuntu_tester http://localhost:$(PORT)"
 
 tester:
-	curl -LO https://cdn.intra.42.fr/document/document/17624/tester
-	curl -LO https://cdn.intra.42.fr/document/document/17625/ubuntu_cgi_tester
-	curl -LO https://cdn.intra.42.fr/document/document/17626/cgi_tester
-	curl -LO https://cdn.intra.42.fr/document/document/17627/ubuntu_tester
+	curl -LO https://cdn.intra.42.fr/document/document/18780/tester
+	curl -LO https://cdn.intra.42.fr/document/document/18781/ubuntu_cgi_tester
+	curl -LO https://cdn.intra.42.fr/document/document/18782/cgi_tester
+	curl -LO https://cdn.intra.42.fr/document/document/18783/ubuntu_tester
 	chmod +x tester ubuntu_cgi_tester cgi_tester ubuntu_tester
 
 make_test_dir:

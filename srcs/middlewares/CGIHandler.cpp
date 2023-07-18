@@ -1,6 +1,7 @@
 #include "CGIHandler.hpp"
 #include "Singleton.hpp"
 #include "SessionHandler.hpp"
+#include "HttpException.hpp"
 #include <signal.h>
 #include "Util.hpp"
 
@@ -9,13 +10,25 @@ extern char **environ;
 void CGIHandler::execute(Request &req, Response &res)
 {
     const std::string ext = Util::get_extension(req.get_translated_path());
-    const std::string arg0 = req.get_location_config().getCgiPath(ext);
+    std::string arg0 = req.get_location_config().getCgiPath(ext);
     if (arg0.empty())
         return Middleware::execute(req, res);
+
+    if (!Util::file_exists(req.get_translated_path()))
+        throw HttpException(404, "Not found");
+    
+    _CGI.push_back(CGI(res));
+    CGI &cgi = _CGI.back();
+    cgi.set_session_id(Singleton<SessionHandler>::get_instance().get_session_id());
+
+	cgi.child_pid = fork();
+    if (cgi.child_pid == -1)
     {
-        _CGI.push_back(CGI(res));
-        CGI &cgi = _CGI.back();
-        cgi.set_session_id(Singleton<SessionHandler>::get_instance().get_session_id());
+        perror("fork() failed");
+        throw HttpException(500, "fork failed");
+    }
+    else if (cgi.child_pid == 0)
+    {
         char **envp = environ;
         while (*envp)
             cgi.add_local_envp(*envp++);
@@ -37,14 +50,12 @@ void CGIHandler::execute(Request &req, Response &res)
         for (Request::t_headers::const_iterator it = req.get_headers().begin();
                 it != req.get_headers().end(); ++it)
         {
-            if (it->first.find("X-") == 0 || it->first.find("Cookie") == 0)
+            if (it->first.compare(0, 2, "X-") == 0 || it->first.compare("Cookie") == 0)
                 cgi.add_envp("HTTP_" + it->first, it->second);
         }
         if (arg0 == "./")
-            cgi.setup_bash(req.get_translated_path(), req.get_translated_path(), req.get_body());
-        else
-            cgi.setup_bash(arg0, req.get_translated_path(), req.get_body());
-        return;
+            arg0 = req.get_translated_path();
+        cgi.setup_bash(arg0, req.get_translated_path(), req.get_body());
     }
 }
 
