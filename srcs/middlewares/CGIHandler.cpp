@@ -3,6 +3,7 @@
 #include "SessionHandler.hpp"
 #include "HttpException.hpp"
 #include "Util.hpp"
+#include <csignal>
 #include <sys/wait.h>
 
 extern char **environ;
