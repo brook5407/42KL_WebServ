@@ -8,12 +8,12 @@
 class CGIHandler: public Middleware
 {
     private:
-        std::list<CGI> _CGI;
+        static std::list<CGI> _CGI;
 
     public:
         void execute(Request &req, Response &res);
-        void timeout(size_t execution_timeout_sec);
-        void handle_exit(pid_t pid, int status);
+        static void timeout(size_t execution_timeout_sec);
+        static void handle_exit(void);
 
 };
 

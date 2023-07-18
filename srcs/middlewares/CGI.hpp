@@ -31,6 +31,7 @@ class CGI
 		Response					_response;
 
 	private:
+		CGI(void);
 		// bool	check_file(std::string &route);
 		// void	_execute_cgi(const std::string &body);
 		static char	**string_to_char(const std::vector<std::string> &vec);

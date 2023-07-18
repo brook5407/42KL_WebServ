@@ -7,6 +7,8 @@
 
 extern char **environ;
 
+std::list<CGI> CGIHandler::_CGI;
+
 void CGIHandler::execute(Request &req, Response &res)
 {
     const std::string ext = Util::get_extension(req.get_translated_path());
@@ -78,17 +80,21 @@ void CGIHandler::timeout(size_t execution_timeout_sec)
 }
 
 // verify kill server, kill cgi
-void CGIHandler::handle_exit(pid_t pid, int status)
+void CGIHandler::handle_exit(void)
 {
-    (void) status;
-    for (std::list<CGI>::iterator it = _CGI.begin(); it != _CGI.end(); ++it)
+    int     status;
+    pid_t   pid;
+
+    while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
     {
-        if (it->child_pid == pid)
+        for (std::list<CGI>::iterator it = _CGI.begin(); it != _CGI.end(); ++it)
         {
-            //todo: delay and split reading stdout for responsiveness
-            it->response(); //todo check error 500 if error/empty, timeout not here but loop_soket()
-            _CGI.erase(it); // remove done CGI
-            break;
+            if (it->child_pid == pid)
+            {
+                it->response(); //todo check error 500 if error/empty, timeout not here but loop_soket()
+                _CGI.erase(it);
+                break;
+            }
         }
     }
 }

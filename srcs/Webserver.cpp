@@ -1,6 +1,5 @@
 #include "Webserver.hpp"
 #include "CGIHandler.hpp"
-#include "Singleton.hpp"
 
 #include <unistd.h>
 #include <signal.h>
@@ -25,14 +24,6 @@ static void on_sigint(int)
 
 static void on_sigchld(int)
 {
-    int     status;
-    pid_t   pid;
-
-    while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
-    {
-        if (!g_exiting)
-            Singleton<CGIHandler>::get_instance().handle_exit(pid, status);
-    }
 }
 
 Webserver::Webserver(const std::string &config_filepath, int cgi_timeout):
@@ -77,7 +68,7 @@ void Webserver::internal_loop(void)
 {
     fd_set                      readfds, writefds;
     struct timeval              timeout;
-    int                         max_fd;
+    int                         max_fd, number_of_fd;
     t_sockets::iterator         fd_it;
     t_connections::iterator     conn_it;
 
@@ -94,8 +85,8 @@ void Webserver::internal_loop(void)
             FD_SET(*fd_it, &readfds);
         }
 
-        on_sigchld(0);
-        Singleton<CGIHandler>::get_instance().timeout(_cgi_timeout);
+        CGIHandler::handle_exit();
+        CGIHandler::timeout(_cgi_timeout);
 
         for (conn_it = _client_connections.begin(); conn_it != _client_connections.end();)
         {
@@ -115,9 +106,10 @@ void Webserver::internal_loop(void)
         }
 
         signal(SIGCHLD, on_sigchld);
-        if (select(++max_fd, &readfds, &writefds, NULL, _client_connections.empty()? NULL: &timeout) <= 0)
+        number_of_fd = select(++max_fd, &readfds, &writefds, NULL, _client_connections.empty()? NULL: &timeout);
+        signal(SIGCHLD, SIG_DFL);
+        if (number_of_fd <= 0)
             continue;
-        signal(SIGCHLD, SIG_IGN);
         for (conn_it = _client_connections.begin(); conn_it != _client_connections.end(); ++conn_it)
         {
             if (FD_ISSET(conn_it->fd(), &writefds))
