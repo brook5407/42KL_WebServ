@@ -139,6 +139,18 @@ test_cases:
 	./$(NAME) test/invalid_method.conf 2>&1 | grep "Invalid method in location"
 	# ./$(NAME) test/conflict_port.conf 2>&1 |grep "Address already in use"
 
+	(pkill $(NAME) || true) && ./$(NAME) test/session.conf 2>&1 > webserv.log &
+	sleep 1 \
+	&& rm -f cookie \
+	&& curl -b cookie -c cookie -v localhost:8080/session.sh 2>&1 | grep "Set-Cookie" \
+	&& grep webserv < cookie \
+	&& curl -b cookie -c cookie -v localhost:8080/session.sh 2>&1 | grep "HTTP_COOKIE=webserv=" \
+	&& curl -b cookie -c cookie -v -d data=hello localhost:8080/session.sh 2>&1 | grep "HTTP_SESSION=" \
+	&& curl -b cookie -c cookie -v -d data=world -H "Transfer-Encoding: chunked" localhost:8080/session.sh 2>&1 | grep "HTTP_SESSION=data=hello" \
+	&& curl -b cookie -c cookie -v -d data= localhost:8080/session.sh 2>&1 | grep "HTTP_SESSION=data=world" \
+	&& curl -b cookie -c cookie -v localhost:8080/session.sh 2>&1 | grep "HTTP_SESSION=" \
+	&& grep webserv < cookie \
+
 	(pkill $(NAME) || true) && ./$(NAME) test/location.conf 2>&1 > webserv.log &
 	sleep 1 \
 	&& curl -s -o - localhost:8080 | grep 404 \

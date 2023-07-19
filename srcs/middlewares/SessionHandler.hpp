@@ -1,7 +1,7 @@
 #ifndef SESSIONHANDLER_HPP
 # define SESSIONHANDLER_HPP
 
-# define SESSION_COOKIE_NAME "ID"
+# define SESSION_COOKIE_NAME "webserv"
 
 # include "Middleware.hpp"
 
