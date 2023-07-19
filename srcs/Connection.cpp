@@ -6,7 +6,7 @@
 
 static char _buffer[BUFFER_SIZE];
 
-static unsigned long get_nanosecond()
+static unsigned long get_nanosecond(void)
 {
     struct timespec currentTime;
 
@@ -34,6 +34,13 @@ std::size_t Connection::next_connection_id(void)
     return ++id;
 }
 
+Connection::Connection(int fd)
+: _request_buffer(), _ifile(), _in_fd(-1), _response_buffer(), _fd(fd), _status(READING),
+_last_activity(time(NULL)), _keep_alive(true), _id(next_connection_id())
+{
+    get_details(fd);
+}
+
 Connection::Connection(const Connection &other)
 : _request_buffer(),  _ifile(),
 _server_port(other._server_port),
@@ -44,27 +51,18 @@ _in_fd(other._in_fd),
 _response_buffer(),_fd(other._fd),
 _status(other._status), _last_activity(other._last_activity),
 _keep_alive(other._keep_alive),
-_id(next_connection_id())
+_id(other._id)
 {
 }
 
-Connection::Connection(int fd)
-: _request_buffer(), _ifile(), _in_fd(-1), _response_buffer(), _fd(fd), _status(READING),
-_last_activity(time(NULL)), _keep_alive(true), _id(0)
-{
-    get_details(fd);
-}
+int Connection::fd(void) const { return _fd; }
+enum CONNECTION_STATUS  &Connection::status(void) { return _status; }
+void    Connection::set_keep_alive(bool keep_alive) { _keep_alive = keep_alive; }
+bool    Connection::keep_alive(void) const { return _keep_alive; }
 
-void Connection::read()
+void Connection::read(void)
 {
     _last_activity = time(NULL);
-    // if (_status != READING)
-    // {
-    //     std::cout << "invalid status, expected READING. request-size:" << _request_buffer.size() << std::endl;
-    //     // throw std::runtime_error("invalid status, expected READING");
-    //     return;
-    // }
-    // char buffer[BUFFER_SIZE] = {};
     int length = recv(_fd, _buffer, sizeof(_buffer), 0); //MSG_NOSIGNAL
     if (length < 1)
     {
@@ -74,16 +72,10 @@ void Connection::read()
     if (_request_buffer.empty())
         _start_time = get_nanosecond();
     _request_buffer += std::string(_buffer, length);
-    // std::cout << "read " << length << " bytes from " << _fd <<  std::endl;
 }
 
 void Connection::write(const std::string &data)
 {
-    // if (_status != READING)
-    // {
-    //     std::cout << "existing " << _response_buffer << std::endl << "===" << data << std::endl;
-    //     throw std::runtime_error("invalid status, expected READING ");
-    // }
     _response_buffer = data;
     _status = SENDING;
 }
@@ -91,10 +83,6 @@ void Connection::write(const std::string &data)
 void Connection::transmit()
 {
     _last_activity = time(NULL);
-    // _status = SENDING;
-    // if (_status != READ && _status != SENDING)
-    //     throw std::runtime_error("invalid status, expected READ or SENDING");
-
     if (!_response_buffer.empty())
     {
         int length = send(_fd, _response_buffer.c_str(), std::min((size_t)BUFFER_SIZE, _response_buffer.size()), 0);
@@ -103,7 +91,6 @@ void Connection::transmit()
             disconnect();
             return;
         }
-        // std::cout << "SENT " << length << " to " << _fd <<  std::endl;
         _response_buffer.erase(0, length);
 
         //stop sending when buffer sent and no file to send
@@ -116,14 +103,11 @@ void Connection::transmit()
     }
 }
 
-//todo test sending empty file
 void Connection::transmit_file()
 {
-    // char buffer[BUFFER_SIZE] = {};
     if (_in_fd > -1)
     {
         int sz_read = ::read(_in_fd, _buffer, sizeof(_buffer));
-        // std::cout << "sending " << sz_read << " fd:" << _in_fd << std::endl;
         if (sz_read < 0)
             perror("read cgi-stdout");
         if (sz_read < 1)
@@ -143,14 +127,12 @@ void Connection::transmit_file()
         }
         if (sent < sz_read)
             lseek(_in_fd, sent - sz_read, SEEK_CUR);
-        // std::cout << "SENT STDOUT " << sent << " to " << _fd <<  std::endl;
     }
     else 
     if (_ifile.is_open())
     {
         if (!_ifile.eof())
         {
-            // char buffer[BUFFER_SIZE] = {};
             _ifile.read(_buffer, sizeof(_buffer));
             int sent = send(_fd, _buffer, _ifile.gcount(), 0);
             if (sent < 1)
@@ -161,7 +143,6 @@ void Connection::transmit_file()
             }
             if (sent < _ifile.gcount())
                 _ifile.seekg(sent - _ifile.gcount(), std::ios::cur);
-            // std::cout << "SENT File " << sent << " to " << _fd <<  std::endl;
         }
         if (_ifile.eof()) //not else-if
         {
@@ -181,9 +162,6 @@ void Connection::on_send_complete()
     std::cout
         << "Request #" << ++total
         << " conn: " << _id
-        // << " keepalive: " << _keep_alive
-        // << " fd: " << _fd
-        << " client: " << _client_ip << ':' << _client_port
         << " duration: " << format_nanosecond(get_nanosecond() - _start_time)
         << std::endl;
     if (_keep_alive)
@@ -196,7 +174,6 @@ void Connection::disconnect(void)
 {
     if (_fd != -1)
     {
-        // shutdown(_fd, SHUT_RDWR);
         close(_fd);
         _fd = -1;
     }
@@ -220,30 +197,25 @@ void Connection::get_details(int connection_socket) {
     struct sockaddr_in client_address;
     socklen_t client_address_len = sizeof(client_address);
     if (getpeername(connection_socket, (struct sockaddr*)&client_address, &client_address_len) == -1)
-        // throw std::runtime_error(strerror(errno));
-        perror("Connection");
+        perror("getpeername");
 
     struct sockaddr_in server_address;
     socklen_t server_address_len = sizeof(server_address);
     if (getsockname(connection_socket, (struct sockaddr*)&server_address, &server_address_len) == -1)
-        // throw std::runtime_error(strerror(errno));
-        perror("Connection");
+        perror("getsockname");
 
     char client_ip[INET_ADDRSTRLEN];
     if (inet_ntop(AF_INET, &(client_address.sin_addr), client_ip, INET_ADDRSTRLEN) == NULL)
-        // throw std::runtime_error(strerror(errno));
-        perror("Connection");
+        perror("inet_ntop/1");
 
     char server_ip[INET_ADDRSTRLEN];
     if (inet_ntop(AF_INET, &(server_address.sin_addr), server_ip, INET_ADDRSTRLEN) == NULL)
-        // throw std::runtime_error(strerror(errno));
-        perror("Connection");
+        perror("inet_ntop/2");
 
     _client_ip = std::string(client_ip);
     _server_ip = std::string(server_ip);
     _client_port = ntohs(client_address.sin_port);
     _server_port = ntohs(server_address.sin_port);
-    
 }
 
 std::ostream& operator<<(std::ostream& os, const Connection& connection)

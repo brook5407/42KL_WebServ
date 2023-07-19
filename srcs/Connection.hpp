@@ -15,21 +15,16 @@ class Connection
     public:
         Connection(const Connection &other);
         Connection(int fd);
-        ~Connection() { } //close(_fd); // avoid auto-close due to copy
-        Connection &operator=(const Connection &)
-        {
-            throw std::runtime_error("Connection assignment operator not implemented");
-        }
 
-        int fd() const { return _fd; }
-        bool is_timeout(int sec);
-        void transmit();
-        void write(const std::string &data);
-        void read();
-        enum CONNECTION_STATUS &status() { return _status; }
-        void set_keep_alive(bool keep_alive) { _keep_alive = keep_alive; }
-        bool keep_alive() const { return _keep_alive; }
-    	friend std::ostream& operator<<(std::ostream& os, const Connection& connection);
+        bool    is_timeout(int sec);
+        void    transmit(void);
+        void    write(const std::string &data);
+        void    read(void);
+        int     fd(void) const;
+        enum    CONNECTION_STATUS &status(void);
+        void    set_keep_alive(bool keep_alive);
+        bool    keep_alive(void) const;
+    	friend  std::ostream& operator<<(std::ostream& os, const Connection& connection);
 
         std::string _request_buffer;
         std::ifstream _ifile;
