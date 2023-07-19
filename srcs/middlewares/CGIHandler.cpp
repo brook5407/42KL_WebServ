@@ -3,12 +3,11 @@
 #include "SessionHandler.hpp"
 #include "HttpException.hpp"
 #include "Util.hpp"
-#include <csignal>
 #include <sys/wait.h>
 
 extern char **environ;
 
-std::list<CGI> CGIHandler::_CGI;
+std::list<CGI> CGIHandler::_cgi_processes;
 
 void CGIHandler::execute(Request &req, Response &res)
 {
@@ -16,31 +15,35 @@ void CGIHandler::execute(Request &req, Response &res)
     std::string arg0 = req.get_location_config().getCgiPath(ext);
     if (arg0.empty())
         return Middleware::execute(req, res);
-
-    if (!Util::file_exists(req.get_translated_path()))
+    if (arg0 == "./")
+        arg0 = req.get_translated_path();
+    if (!Util::file_exists(arg0) || !Util::file_exists(req.get_translated_path()))
         throw HttpException(404, "Not found");
-    
-    _CGI.push_back(CGI(res));
-    CGI &cgi = _CGI.back();
-    cgi.set_session_id(Singleton<SessionHandler>::get_instance().get_session_id());
+    if (!Util::file_executable(arg0))
+        throw HttpException(403, "require executable file");
 
-	cgi.child_pid = fork();
-    if (cgi.child_pid == -1)
+    CGI cgi(res);
+	pid_t pid = fork();
+    if (pid == -1)
     {
         perror("fork() failed");
         throw HttpException(500, "fork failed");
     }
-    else if (cgi.child_pid == 0)
+    else if (pid > 0)
     {
-        char **envp = environ;
-        while (*envp)
-            cgi.add_local_envp(*envp++);
+        cgi.set_pid(pid);
+        cgi.set_session_id(Singleton<SessionHandler>::get_instance().get_session_id());
+        _cgi_processes.push_back(cgi);
+    }
+    else
+    {
+        for (char **envp = environ; *envp; ++envp)
+            cgi.add_local_envp(*envp);
         cgi.add_envp("REQUEST_METHOD", req.get_method());
         cgi.add_envp("SERVER_PROTOCOL", "HTTP/1.1");
         cgi.add_envp("PATH_INFO", req.get_uri());
         cgi.add_envp("QUERY_STRING", req.get_query_string());
         cgi.add_envp("HTTP_SESSION", Singleton<SessionHandler>::get_instance().get_session());
-
         cgi.add_envp("CONTENT_LENGTH", Util::to_string(req.get_body_length()));
         cgi.add_envp("CONTENT_TYPE", req.get_header("Content-Type"));
         cgi.add_envp("GATEWAY_INTERFACE", "CGI/1.1");
@@ -49,16 +52,13 @@ void CGIHandler::execute(Request &req, Response &res)
         // cgi.add_envp("SCRIPT_NAME", req.get_translated_path());
         cgi.add_envp("SERVER_SOFTWARE", "webserv");
         cgi.add_envp("SERVER_PORT", Util::to_string(res._connection._server_port));
-
         for (Request::t_headers::const_iterator it = req.get_headers().begin();
                 it != req.get_headers().end(); ++it)
         {
             if (it->first.compare(0, 2, "X-") == 0 || it->first.compare("Cookie") == 0)
                 cgi.add_envp("HTTP_" + it->first, it->second);
         }
-        if (arg0 == "./")
-            arg0 = req.get_translated_path();
-        cgi.setup_bash(arg0, req.get_translated_path(), req.get_body());
+        cgi.exec(arg0, req.get_translated_path(), req.get_body());
     }
 }
 
@@ -67,14 +67,10 @@ void CGIHandler::timeout(size_t execution_timeout_sec)
     // just set response to 502
     // select blocks, this function is read only after select times out
     // for convenience is_timeout and select timeout should be the same
-    for (std::list<CGI>::iterator it = _CGI.begin(); it != _CGI.end();)
+    for (std::list<CGI>::iterator it = _cgi_processes.begin(); it != _cgi_processes.end();)
     {
-        if (it->is_timeout(execution_timeout_sec))
-        {
-            it->_response.send_content(502, "Process has timed out");
-            kill(it->child_pid, SIGKILL);
-            it = _CGI.erase(it);
-        }
+        if (it->timeout(execution_timeout_sec))
+            it = _cgi_processes.erase(it);
         else
             ++it;
     }
@@ -88,12 +84,12 @@ void CGIHandler::handle_exit(void)
 
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
     {
-        for (std::list<CGI>::iterator it = _CGI.begin(); it != _CGI.end(); ++it)
+        for (std::list<CGI>::iterator it = _cgi_processes.begin(); it != _cgi_processes.end(); ++it)
         {
-            if (it->child_pid == pid)
+            if (it->get_pid() == pid)
             {
                 it->response(); //todo check error 500 if error/empty, timeout not here but loop_soket()
-                _CGI.erase(it);
+                _cgi_processes.erase(it);
                 break;
             }
         }

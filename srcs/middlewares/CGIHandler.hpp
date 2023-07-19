@@ -8,7 +8,7 @@
 class CGIHandler: public Middleware
 {
     private:
-        static std::list<CGI> _CGI;
+        static std::list<CGI> _cgi_processes;
 
     public:
         void execute(Request &req, Response &res);

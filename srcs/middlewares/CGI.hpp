@@ -9,13 +9,14 @@
 class CGI
 {
 	public:
-		CGI(Response);
-		// ~CGI(void);
-		void	setup_bash(const std::string &handler, const std::string &script, const std::string &body);
+		CGI(Response &response);
+		void	exec(const std::string &argv0, const std::string &argv1, const std::string &body);
+		void	set_pid(pid_t pid);
+		void	set_session_id(const std::string &session_id);
+		pid_t	get_pid(void) const;
 		void	response(void);
-		bool	is_timeout(int timeout);
+		bool	timeout(std::size_t execution_timeout_sec);
 		void	add_envp(std::string key, const std::string &value);
-		void	set_session_id(const std::string &id);
 		void	add_local_envp(const char *var);
 
 		class CGIException : public std::exception
@@ -27,23 +28,17 @@ class CGI
 				}
 		};
 
-		pid_t						child_pid;
-		Response					_response;
 
 	private:
-		CGI(void);
-		// bool	check_file(std::string &route);
-		// void	_execute_cgi(const std::string &body);
-		static char	**string_to_char(const std::vector<std::string> &vec);
-
-		time_t						_start_time;
-		// FILE						*file_in;
-		// FILE						*file_out;
-		// int						file_in_fd;
+		pid_t						_pid;
+		Response					_response;
+		const time_t				_start_time;
 		int							_file_out_fd;
 		std::vector<std::string>	_envp;
 		std::string					_session_id;
 
+		CGI(void);
+		static char		**string_to_char(const std::vector<std::string> &vec);
 };
 
 #endif

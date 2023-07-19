@@ -9,7 +9,9 @@
 
 Response::Response(Connection &connection)
 : _connection(connection)
-{}
+{
+    _connection.status() = WAITING;
+}
 
 Response::Response(Response const &src)
 : _connection(src._connection), _headers(src._headers)

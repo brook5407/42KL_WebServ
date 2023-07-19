@@ -1,32 +1,36 @@
 #include "CGI.hpp"
-# include <cstdlib>
+#include <cstdlib>
+#include <csignal>
 
-CGI::CGI(Response response)
-: child_pid(-1), _response(response), _start_time(time(NULL)), _file_out_fd(-1)
+CGI::CGI(Response &response)
+: _pid(-1), _response(response), _start_time(time(NULL))
 {
-	_response._connection.status() = WAITING;
+	FILE	*file_out = tmpfile();
+	_file_out_fd = fileno(file_out);
 }
 
-// CGI::~CGI()
-// {
-// 	if (file_in)
-// 		fclose(file_in);
-// }
-
-void	CGI::setup_bash(const std::string &handler, const std::string &script, const std::string &body)
+void	CGI::set_pid(pid_t pid)
 {
-	std::vector<std::string>	argv;
+	_pid = pid;
+}
 
-	argv.push_back(handler);
-	argv.push_back(script);
+void	CGI::set_session_id(const std::string &session_id)
+{
+	_session_id = session_id;
+}
 
+pid_t	CGI::get_pid(void) const
+{
+	return (_pid);
+}
+
+void	CGI::exec(const std::string &argv0, const std::string &argv1, const std::string &body)
+{
 	FILE *file_in = tmpfile();
 	int file_in_fd = fileno(file_in);
-	int check = write(file_in_fd, body.c_str(), body.size());
-	if (check == -1)
+	if (write(file_in_fd, body.c_str(), body.size()) != static_cast<ssize_t>(body.size()))
 		throw CGIException();
 	lseek(file_in_fd, 0, SEEK_SET);
-
 	if (dup2(_file_out_fd, STDOUT_FILENO) == -1)
 		throw CGIException();
 	if (dup2(file_in_fd, STDIN_FILENO) == -1)
@@ -35,20 +39,30 @@ void	CGI::setup_bash(const std::string &handler, const std::string &script, cons
 	//unistd.h sysconf(_SC_OPEN_MAX)
 	for (int i = 3; i < 1024; ++i)
 		close(i);
-	char **arguments = string_to_char(argv);
+	char	*argv[] = 
+	{
+		const_cast<char*>(argv0.c_str()),
+		const_cast<char*>(argv1.c_str()),
+		NULL
+	};
 	char **envp = string_to_char(this->_envp);
-	execve(*arguments, arguments, envp);
+	execve(*argv, argv, envp);
 	perror("execve");
-	delete [] arguments;
 	delete [] envp;
 	fclose(file_in);
 	exit(1);
 }
 
-bool	CGI::is_timeout(int timeout)
+bool	CGI::timeout(std::size_t execution_timeout_sec)
 {
 	double timediff = difftime(time(NULL), _start_time);
-	return (timediff >= timeout);
+	bool is_timeout = (timediff >= execution_timeout_sec);
+	if (is_timeout)
+	{
+		_response.send_content(502, "Process has timed out");
+		kill(_pid, SIGKILL);
+	}
+	return (is_timeout);
 }
 
 void	CGI::response(void)
@@ -64,13 +78,6 @@ char	**CGI::string_to_char(const std::vector<std::string> &vec)
 		array[i] = const_cast<char*>(vec[i].c_str());
 	array[vec.size()] = NULL;
 	return (array);
-}
-
-void	CGI::set_session_id(const std::string &id)
-{
-	_session_id = id;
-	FILE	*file_out = tmpfile();
-	_file_out_fd = fileno(file_out);
 }
 
 void	CGI::add_envp(std::string key, const std::string &value)
