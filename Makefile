@@ -144,8 +144,10 @@ test_cases:
 	&& curl -s -o - localhost:8080 | grep 404 \
 	&& curl -s -o - localhost:8080/ | grep 404 \
 	&& curl -s -o - localhost:8080/whatever | grep 404 \
-	&& curl -s -o - localhost:8080/dir | grep "Index of" \
-	&& curl -v -s -o - localhost:8080/dir 2>&1  | grep "HTTP/1.1 200 OK" \
+	&& curl -s -o - localhost:8080/dir/ | grep "Index of" \
+	&& curl -v -s -o - localhost:8080/dir/ 2>&1  | grep "HTTP/1.1 200 OK" \
+	# && curl -v -s -o - localhost:8080/dir 2>&1 | grep "301" \
+	# && curl -v -s -o - localhost:8080/dir2/ 2>&1 | grep "403" \
 
 	(pkill $(NAME) || true) && ./$(NAME) test/multi_server.conf 2>&1 > webserv.log &
 	sleep 1 \
