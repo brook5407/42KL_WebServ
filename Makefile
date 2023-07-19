@@ -6,7 +6,7 @@ OBJFILES	:= webserv.o Webserver.o \
 				HttpException.o Middleware.o Pipeline.o ErrorHandler.o \
 				AllowMethodHandler.o AutoIndexHandler.o CGIHandler.o CGI.o \
 				IndexHandler.o RedirectHandler.o StaticFileHandler.o UploadHandler.o \
-				LimitRequestBodyHandler.o SessionHandler.o
+				LimitRequestBodyHandler.o SessionHandler.o KeepAliveHandler.o \
 
 OBJDIR		:= obj
 DEPFILES	:= $(OBJFILES:.o=.d) $(OBJFILES:%.o=$(OBJDIR)/%.d)
