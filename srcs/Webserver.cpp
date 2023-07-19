@@ -74,6 +74,7 @@ void Webserver::internal_loop(void)
 
     while (!g_exiting)
     {
+        max_fd = 0;
         timeout.tv_sec = POLL_TIMEOUT_SEC;
         timeout.tv_usec = 0;
         FD_ZERO(&readfds);
