@@ -1,7 +1,9 @@
 #ifndef SESSIONHANDLER_HPP
 # define SESSIONHANDLER_HPP
 
-#include "Middleware.hpp"
+# define SESSION_COOKIE_NAME "ID"
+
+# include "Middleware.hpp"
 
 class SessionHandler : public Middleware
 {

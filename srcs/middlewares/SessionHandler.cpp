@@ -4,11 +4,11 @@
 
 void SessionHandler::execute(Request &req, Response &res)
 {
-	_current_session_ID = extract_cookie(req.get_header("Cookie"), "ID");
+	_current_session_ID = extract_cookie(req.get_header("Cookie"), SESSION_COOKIE_NAME);
 	if (_current_session_ID.empty())
 	{
 		_current_session_ID = Util::to_string(rand());
-		res.set_header("Set-Cookie", "ID=" + _current_session_ID);
+		res.set_header("Set-Cookie", SESSION_COOKIE_NAME "=" + _current_session_ID);
 	}
 	Middleware::execute(req, res);
 }
