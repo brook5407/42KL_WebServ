@@ -189,9 +189,17 @@ test_cases:
 	&& test ! -f wwwroot/upload/purple.png \
 	&& curl -F 'upload=@wwwroot/purple.png' http://localhost:8080/upload 2>&1 | grep "Upload Successful" \
 	&& test -f wwwroot/upload/purple.png \
+	&& diff wwwroot/purple.png wwwroot/upload/purple.png \
 	&& curl -X DELETE http://localhost:8080/upload/purple.png 2>&1 | grep "has been deleted" \
 	&& test ! -f wwwroot/upload/purple.png \
 	&& curl -v -F 'upload=@wwwroot/purple.png' http://localhost:8080/small 2>&1 | grep "HTTP/1.1 413 Payload Too Large" \
+	&& rm -f wwwroot/upload/chunked.png \
+	&& curl -H "Transfer-Encoding: chunked" --data-binary @wwwroot/purple.png localhost:8080/upload/chunked.png -v 2>&1 | grep "has been uploaded" \
+	&& diff wwwroot/upload/chunked.png wwwroot/purple.png \
+	&& curl -H "Transfer-Encoding: chunked" --data-binary @Makefile localhost:8080/upload/chunked.png -v 2>&1 | grep "has been uploaded" \
+	&& diff wwwroot/upload/chunked.png Makefile \
+	&& curl -X DELETE http://localhost:8080/upload/chunked.png 2>&1 | grep "has been deleted" \
+	&& test ! -f wwwroot/upload/chunked.png \
 
 	(pkill $(NAME) || true) && ./$(NAME) test/CGI.conf  2>&1 > webserv.log &
 	sleep 1 \
