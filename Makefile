@@ -52,13 +52,7 @@ $(OBJDIR): $(OBJFILES)
 	mkdir -p $(OBJDIR)
 	mv *.d *.o $(OBJDIR)
 
-testx: $(NAME)
-	curl -H "Transfer-Encoding: chunked" -d "key=value&name=text" localhost:8080 -v
-	curl -H "Transfer-Encoding: chunked" -H "Content-Disposition: attachment; filename=\"filename.png\"" --data-binary @Makefile localhost:8080 -v
-	curl -v -F key1=value1 -F upload=@Makefile localhost:9999 -v
-	@echo PING | nc localhost $(PORT)
-
-test: $(NAME) make_test_dir make_test_conf test_config_run test_cases
+test: $(NAME) $(OBJDIR) make_test_dir make_test_conf test_config_run test_cases
 	pkill $(NAME) || true
 	./$(NAME) YoupiBanane.conf 180 2>&1 > webserv.log &
 	time ./tester http://localhost:$(PORT) || bash -c "time ./ubuntu_tester http://localhost:$(PORT)"
@@ -123,7 +117,7 @@ server {\n\
     }\n\
 }" > YoupiBanane.conf
 
-test_config: test/test_config.o Server.o Location.o ConfigParser.o ParserError.o MimeType.o
+test_config: test_config.o Server.o Location.o ConfigParser.o ParserError.o MimeType.o
 
 test_config_run: test_config
 	./$< YoupiBanane.conf
