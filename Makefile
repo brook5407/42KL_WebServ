@@ -12,8 +12,8 @@ OBJDIR		:= obj
 DEPFILES	:= $(OBJFILES:.o=.d) $(OBJFILES:%.o=$(OBJDIR)/%.d)
 # ASAN		:= -fsanitize=address
 CXXFLAGS	:= -Wall -Wextra -Werror -Wshadow -std=c++98 -MMD $(ASAN) -Isrcs -Isrcs/middlewares
-# CXXFLAGS  	+= -O3 -flto
-CXXFLAGS  	+= -g3
+CXXFLAGS  	+= -O3
+# CXXFLAGS  	+= -g3
 LDLIBS		:= -lstdc++ $(ASAN)
 VPATH		:= srcs srcs/middlewares $(OBJDIR) test
 PORT		:= 8080
