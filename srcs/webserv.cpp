@@ -8,7 +8,9 @@ int main(int argc, char **argv)
     const char *config_filepath = "conf/webserv.conf";
     try
     {
-        if (argc >= 2)
+        if (argc == 1)
+            std::cout << "Using default config file: " << config_filepath << std::endl;
+        else
             config_filepath = argv[1];
         if (argc == 3)
         {
