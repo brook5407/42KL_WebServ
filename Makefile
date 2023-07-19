@@ -40,7 +40,7 @@ clean:
 	rm -rf test/test_config.o test/test_config.d
 
 fclean: clean
-	$(RM) $(NAME)
+	$(RM) $(NAME) test_config
 
 re: fclean all
 
@@ -52,7 +52,7 @@ $(OBJDIR): $(OBJFILES)
 	mkdir -p $(OBJDIR)
 	mv *.d *.o $(OBJDIR)
 
-test: $(NAME) $(OBJDIR) make_test_dir make_test_conf test_config_run test_cases
+test: $(NAME) test_config $(OBJDIR) make_test_dir make_test_conf test_config_run test_cases
 	pkill $(NAME) || true
 	./$(NAME) YoupiBanane.conf 180 2>&1 > webserv.log &
 	time ./tester http://localhost:$(PORT) || bash -c "time ./ubuntu_tester http://localhost:$(PORT)"
