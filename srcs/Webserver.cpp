@@ -16,13 +16,13 @@
 
 static bool g_exiting = false;
 
-static void on_sigint(int)
+static void exit_internal_loop(int)
 {
     g_exiting = true;
-    std::cout << "\nWebserv is stopping..." << std::endl;
+    std::cout << "\rWebserv is stopping..." << std::endl;
 }
 
-static void on_sigchld(int)
+static void exit_select(int)
 {
 }
 
@@ -110,7 +110,7 @@ void Webserver::internal_loop(void)
             }
         }
 
-        signal(SIGCHLD, on_sigchld); // allows exit from select once cgi is done
+        signal(SIGCHLD, exit_select); // allows exit from select once cgi is done
         ready_fd = select(++max_fd, &readfds, &writefds, NULL, _client_connections.empty()? NULL: &timeout); // null block indefinetly until there is a connection
         signal(SIGCHLD, SIG_DFL);
         if (ready_fd <= 0)
@@ -121,9 +121,9 @@ void Webserver::internal_loop(void)
         for (conn_it = _client_connections.begin(); conn_it != _client_connections.end(); ++conn_it)
         {
             if (FD_ISSET(conn_it->fd(), &writefds))
-                conn_it->transmit();
+                conn_it->send_response();
             else if (FD_ISSET(conn_it->fd(), &readfds))
-                conn_it->read(), process_request(*conn_it);
+                conn_it->recv_request(), process_request(*conn_it);
         }
 
         // create connection for new client
@@ -181,7 +181,7 @@ void Webserver::loop(void)
 {
     signal(SIGPIPE, SIG_IGN); // writing to closed socket, or send(MSG_NOSIGNAL)
     signal(SIGINT, SIG_IGN);
-    signal(SIGINT, on_sigint);
+    signal(SIGINT, exit_internal_loop);
 
     init_server_ports();
     internal_loop();

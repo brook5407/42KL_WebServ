@@ -27,7 +27,6 @@ class Response
         std::map<std::string, std::string> _headers;
         Response(void);
         void add_response_header(std::stringstream &ss, int status_code);
-        void end(std::stringstream &ss);
 };
 
 #endif

@@ -56,11 +56,11 @@ _id(other._id)
 }
 
 int Connection::fd(void) const { return _fd; }
-enum CONNECTION_STATUS  &Connection::status(void) { return _status; }
+CONNECTION_STATUS  &Connection::status(void) { return _status; }
 void    Connection::set_keep_alive(bool keep_alive) { _keep_alive = keep_alive; }
 bool    Connection::keep_alive(void) const { return _keep_alive; }
 
-void Connection::read(void)
+void Connection::recv_request(void)
 {
     _last_activity = time(NULL);
     int length = recv(_fd, _buffer, sizeof(_buffer), 0); //MSG_NOSIGNAL
@@ -71,16 +71,17 @@ void Connection::read(void)
     }
     if (_request_buffer.empty())
         _start_time = get_nanosecond();
-    _request_buffer += std::string(_buffer, length);
+    _request_buffer.append(_buffer, _buffer + length);
 }
 
-void Connection::write(const std::string &data)
+void Connection::set_response(const std::stringstream &data)
 {
-    _response_buffer = data;
+    _response_buffer = data.str();
     _status = SENDING;
+    _request_buffer.clear();
 }
 
-void Connection::transmit()
+void Connection::send_response(void)
 {
     _last_activity = time(NULL);
     if (!_response_buffer.empty())
@@ -107,7 +108,7 @@ void Connection::transmit_file()
 {
     if (_in_fd > -1)
     {
-        int sz_read = ::read(_in_fd, _buffer, sizeof(_buffer));
+        int sz_read = read(_in_fd, _buffer, sizeof(_buffer));
         if (sz_read < 0)
             perror("read cgi-stdout");
         if (sz_read < 1)
@@ -128,8 +129,7 @@ void Connection::transmit_file()
         if (sent < sz_read)
             lseek(_in_fd, sent - sz_read, SEEK_CUR);
     }
-    else 
-    if (_ifile.is_open())
+    else if (_ifile.is_open())
     {
         if (!_ifile.eof())
         {
@@ -161,8 +161,8 @@ void Connection::on_send_complete()
     static size_t total = 0;
     std::cout
         << "Request " << ++total
-        << " conn #" << _id
-        << " duration: " << format_nanosecond(get_nanosecond() - _start_time)
+        << " Connection #" << _id
+        << " duration " << format_nanosecond(get_nanosecond() - _start_time)
         << std::endl;
     if (_keep_alive)
         _status = READING;
@@ -188,14 +188,15 @@ bool Connection::request_timeout(int sec)
     const double duration_sec = difftime(time(NULL), _last_activity);
     if (duration_sec >= sec)
     {
-        std::cout << "request timeout #" << _id << " after " << duration_sec << " s" << std::endl;
+        std::cout << "Connection #" << _id << " timeout after " << duration_sec << " s" << std::endl;
         disconnect();
         return true;
     }
     return false;
 }
 
-void Connection::get_details(int connection_socket) {
+void Connection::get_details(int connection_socket)
+{
     struct sockaddr_in client_address;
     socklen_t client_address_len = sizeof(client_address);
     if (getpeername(connection_socket, (struct sockaddr*)&client_address, &client_address_len) == -1)
@@ -218,14 +219,4 @@ void Connection::get_details(int connection_socket) {
     _server_ip = std::string(server_ip);
     _client_port = ntohs(client_address.sin_port);
     _server_port = ntohs(server_address.sin_port);
-}
-
-std::ostream& operator<<(std::ostream& os, const Connection& connection)
-{
-    os
-        << "Connection #" << connection._fd << " "
-        << connection._client_ip << ":" << connection._client_port 
-        << (connection._status == READING? " > ": connection._status == SENDING? " < ": " - ")
-        << connection._server_ip << ":" << connection._server_port;
-    return os;
 }
