@@ -37,6 +37,9 @@ void CGIHandler::execute(Request &req, Response &res)
     }
     else
     {
+        // duplicate environment is replaced by newer value
+        for (Request::t_headers::const_iterator it = req.get_headers().begin(); it != req.get_headers().end(); ++it)
+            cgi.add_envp("HTTP_" + it->first, it->second);
         for (char **envp = environ; *envp; ++envp)
             cgi.add_local_envp(*envp);
         cgi.add_envp("REQUEST_METHOD", req.get_method());
@@ -52,12 +55,6 @@ void CGIHandler::execute(Request &req, Response &res)
         // cgi.add_envp("SCRIPT_NAME", req.get_translated_path());
         cgi.add_envp("SERVER_SOFTWARE", "webserv");
         cgi.add_envp("SERVER_PORT", Util::to_string(res._connection._server_port));
-        for (Request::t_headers::const_iterator it = req.get_headers().begin();
-                it != req.get_headers().end(); ++it)
-        {
-            if (it->first.compare(0, 2, "X-") == 0 || it->first.compare("Cookie") == 0)
-                cgi.add_envp("HTTP_" + it->first, it->second);
-        }
         cgi.exec(arg0, req.get_translated_path(), req.get_body());
     }
 }
