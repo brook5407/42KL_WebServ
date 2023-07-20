@@ -29,15 +29,14 @@ void	CGI::exec(const std::string &argv0, const std::string &argv1, const std::st
 	FILE *file_in = tmpfile();
 	int file_in_fd = fileno(file_in);
 	if (write(file_in_fd, body.c_str(), body.size()) != static_cast<ssize_t>(body.size()))
-		throw CGIException();
+		exit(1);
 	lseek(file_in_fd, 0, SEEK_SET);
 	if (dup2(_file_out_fd, STDOUT_FILENO) == -1)
-		throw CGIException();
+		exit(1);
 	if (dup2(file_in_fd, STDIN_FILENO) == -1)
-		throw CGIException();
+		exit(1);
 
-	//unistd.h sysconf(_SC_OPEN_MAX)
-	for (int i = 3; i < 1024; ++i)
+	for (int i = 3; i < OPEN_MAX; ++i)
 		close(i);
 	char	*argv[] = 
 	{

@@ -11,18 +11,22 @@ void RedirectHandler::execute(Request &req, Response &res)
     }
     else
     {
-        // if (req.get_method() == "GET" 
-        //     && req.get_uri().size() > 1
-        //     && *req.get_uri().rbegin() != '/')
-        // {
-        //     DIR *dir = opendir(req.get_translated_path().c_str());
-        //     if (dir)
-        //     {
-        //         closedir(dir);
-        //         res.send_location(301, req.get_uri() + "/");
-        //         return;
-        //     }
-        // }
         Middleware::execute(req, res);
     }
 }
+
+// static void append_slash()
+// {
+//     if (req.get_method() == "GET" 
+//         && req.get_uri().size() > 1
+//         && *req.get_uri().rbegin() != '/')
+//     {
+//         DIR *dir = opendir(req.get_translated_path().c_str());
+//         if (dir)
+//         {
+//             closedir(dir);
+//             res.send_location(301, req.get_uri() + "/");
+//             return;
+//         }
+//     }
+// }

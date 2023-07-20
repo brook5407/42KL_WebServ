@@ -88,7 +88,7 @@ void CGIHandler::handle_exit(void)
         {
             if (it->get_pid() == pid)
             {
-                it->response(); //todo check error 500 if error/empty, timeout not here but loop_soket()
+                it->response();
                 _cgi_processes.erase(it);
                 break;
             }

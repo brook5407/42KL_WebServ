@@ -70,10 +70,3 @@ MimeType::MimeType()
     // operator[](".3g2") = "video/3gpp2";
     // operator[](".7z") = "application/x-7z-compressed";
 }
-
-std::string MimeType::lookup(const std::string &extension) const
-{
-    if (count(extension))
-        return find(extension)->second;
-    return std::string();
-}

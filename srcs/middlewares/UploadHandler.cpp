@@ -6,7 +6,6 @@
 static std::string get_filename(const std::string &Content_disposition);
 static void save_file(const std::string &filename, const std::string &content);
 static bool checkMultiPart(const std::string &content_type);
-// static void alert(std::stringstream &ss, const std::string &msg);
 
 // todo think about http response status code for different failures
 void UploadHandler::execute(Request &req, Response &res)
@@ -99,8 +98,6 @@ void save_file(const std::string &filename, const std::string &content)
 {
     if (filename.empty())
             throw HttpException(400, "Bad Request: no filename");
-    // if (content.empty())
-    //     throw HttpException(400, "Bad Request: no content");
     std::ofstream ofs(filename.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
     if (ofs.fail())
         throw HttpException(500, "Internal Server Error: fail to open file");
@@ -114,8 +111,3 @@ bool checkMultiPart(const std::string &content_type)
         return true;
     return false;
 }
-
-// void alert(std::stringstream &ss, const std::string &msg)
-// {
-//     ss << "<script>alert(\"" << msg << "\");</script>";
-// }

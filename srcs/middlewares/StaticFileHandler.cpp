@@ -15,7 +15,7 @@ void StaticFileHandler::execute(Request &req, Response &res)
         it = mimetype.find(extension);
         if (it == mimetype.end())
             throw HttpException(403, "Forbidden");
-        res.send_file(200, req.get_translated_path(), (*it).second);
+        res.send_file(200, req.get_translated_path(), it->second);
     }
     else
         throw HttpException(404, "Not found");

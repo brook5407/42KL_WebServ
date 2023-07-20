@@ -21,7 +21,7 @@ int main(int argc, char **argv)
         else if (argc > 3)
             throw std::invalid_argument("usage: webserv <conf_file>");
         srand(time(NULL));
-        Webserver webserver(config_filepath, cgi_timeout);
+        Webserver webserver(config_filepath, cgi_timeout); // parse the config file
         webserver.loop();
         return EXIT_SUCCESS;
     }

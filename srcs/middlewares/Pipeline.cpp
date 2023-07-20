@@ -3,7 +3,7 @@
 #include "AutoIndexHandler.hpp"
 #include "CGIHandler.hpp"
 #include "ErrorHandler.hpp"
-#include "AllowMethodHandler.hpp"
+#include "CheckMethodHandler.hpp"
 #include "IndexHandler.hpp"
 #include "RedirectHandler.hpp"
 #include "StaticFileHandler.hpp"
@@ -19,7 +19,7 @@ Pipeline::Pipeline()
     add_handler(this, &Singleton<ErrorHandler>::get_instance());
     add_handler(this, &Singleton<SessionHandler>::get_instance());
     add_handler(this, &Singleton<KeepAliveHandler>::get_instance());
-    add_handler(this, &Singleton<AllowMethodHandler>::get_instance());
+    add_handler(this, &Singleton<CheckMethodHandler>::get_instance());
     add_handler(this, &Singleton<RedirectHandler>::get_instance());
     add_handler(this, &Singleton<LimitRequestBodyHandler>::get_instance());
     add_handler(this, &Singleton<IndexHandler>::get_instance()); // all methods

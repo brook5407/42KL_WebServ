@@ -6,6 +6,8 @@
 # include <vector>
 # include <exception>
 
+# define OPEN_MAX 1024
+
 class CGI
 {
 	public:
