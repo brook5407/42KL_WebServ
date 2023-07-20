@@ -160,8 +160,8 @@ void Connection::on_send_complete()
 {
     static size_t total = 0;
     std::cout
-        << "Request #" << ++total
-        << " conn: " << _id
+        << "Request " << ++total
+        << " conn #" << _id
         << " duration: " << format_nanosecond(get_nanosecond() - _start_time)
         << std::endl;
     if (_keep_alive)
@@ -181,12 +181,14 @@ void Connection::disconnect(void)
 }
 
 // different timeout for idle, long read, long write?
-bool Connection::is_timeout(int sec)
+bool Connection::request_timeout(int sec)
 {
+    if (_status != READING || !_request_buffer.empty())
+        return false;
     const double duration_sec = difftime(time(NULL), _last_activity);
-    if (duration_sec > sec)
+    if (duration_sec >= sec)
     {
-        std::cout << "timeout #" << _fd << " after " << duration_sec << std::endl;
+        std::cout << "request timeout #" << _id << " after " << duration_sec << " s" << std::endl;
         disconnect();
         return true;
     }

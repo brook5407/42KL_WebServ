@@ -16,7 +16,7 @@ class Connection
         Connection(const Connection &other);
         Connection(int fd);
 
-        bool    is_timeout(int sec);
+        bool    request_timeout(int sec);
         void    transmit(void);
         void    write(const std::string &data);
         void    read(void);

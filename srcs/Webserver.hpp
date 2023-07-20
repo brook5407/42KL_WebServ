@@ -3,7 +3,7 @@
 
 # define LISTEN_BACKLOG 128
 # define POLL_TIMEOUT_SEC 1
-# define CONNECTION_TIMEOUT_SEC 300
+# define REQUEST_TIMEOUT_SEC 5
 
 # include "Pipeline.hpp"
 # include "Connection.hpp"

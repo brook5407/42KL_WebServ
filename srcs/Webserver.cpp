@@ -91,7 +91,7 @@ void Webserver::internal_loop(void)
 
         for (conn_it = _client_connections.begin(); conn_it != _client_connections.end();)
         {
-            if (conn_it->status() == DISCONNECTED || conn_it->is_timeout(CONNECTION_TIMEOUT_SEC))
+            if (conn_it->status() == DISCONNECTED || conn_it->request_timeout(REQUEST_TIMEOUT_SEC))
             {
                 conn_it = _client_connections.erase(conn_it);
             }
