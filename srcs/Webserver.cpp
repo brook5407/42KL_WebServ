@@ -41,7 +41,8 @@ void Webserver::process_request(Connection &connection)
         Response response(connection);
         _pipeline.execute(request, response);
     }
-    else if (connection._request_buffer.size() > 80 * 1024)
+    else if (connection._request_buffer.find("\r\n\r\n") > 80 * 1024
+        && connection._request_buffer.size() > 80 * 1024)
     {
         Response response(connection);
         response.set_keep_alive(false);

@@ -132,6 +132,11 @@ test_cases:
 	./$(NAME) test/invalid_location.conf 2>&1 | grep "Invalid prefix in location"
 	./$(NAME) test/invalid_method.conf 2>&1 | grep "Invalid method in location"
 	# ./$(NAME) test/conflict_port.conf 2>&1 |grep "Address already in use"
+	
+	./$(NAME) &
+	sleep 1 \
+	&& cat $(NAME) | nc localhost 8080 | grep "400" \
+	&& ./$(NAME) 2>&1 | grep "Address already in use" \
 
 	(pkill $(NAME) || true) && ./$(NAME) test/session.conf 2>&1 > webserv.log &
 	sleep 1 \
