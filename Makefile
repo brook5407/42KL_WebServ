@@ -135,7 +135,7 @@ test_cases:
 	
 	./$(NAME) &
 	sleep 1 \
-	&& cat $(NAME) | nc localhost 8080 | grep "400" \
+	&& cat /dev/random | nc localhost 8080 | grep "400" \
 	&& ./$(NAME) 2>&1 | grep "Address already in use" \
 
 	(pkill $(NAME) || true) && ./$(NAME) test/session.conf 2>&1 > webserv.log &
