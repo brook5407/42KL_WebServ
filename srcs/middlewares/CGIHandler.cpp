@@ -89,8 +89,6 @@ void CGIHandler::handle_exit(void)
                     status = WEXITSTATUS(status);
                 else if (WIFSIGNALED(status))
                     status = 128 + WTERMSIG(status);
-                else
-                    status = status;
                 it->response(status);
                 _cgi_processes.erase(it);
                 break;
