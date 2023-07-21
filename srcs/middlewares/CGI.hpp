@@ -7,7 +7,9 @@
 # include <vector>
 # include <exception>
 
-# define OPEN_MAX 1024
+# ifndef OPEN_MAX
+#  define OPEN_MAX 10240
+# endif
 
 class CGI
 {
