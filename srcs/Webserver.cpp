@@ -1,5 +1,6 @@
 #include "Webserver.hpp"
 #include "CGIHandler.hpp"
+#include "ErrorHandler.hpp"
 
 #include <unistd.h>
 #include <signal.h>
@@ -39,6 +40,12 @@ void Webserver::process_request(Connection &connection)
     {
         Response response(connection);
         _pipeline.execute(request, response);
+    }
+    else if (connection._request_buffer.size() > 80 * 1024)
+    {
+        Response response(connection);
+        response.set_keep_alive(false);
+        ErrorHandler::send_error(request, response, 400, "header too large");
     }
 }
 
