@@ -16,6 +16,7 @@ void AutoIndexHandler::execute(Request &req, Response &res)
         return Middleware::execute(req, res);
     if (req.get_location_config().checkAutoIndex() == false)
     {
+        closedir(dir);
         // if (req.get_method() == "GET")
         //     throw HttpException(403, "listing denied");
         return Middleware::execute(req, res);
