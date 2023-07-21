@@ -16,18 +16,27 @@ void ErrorHandler::execute(Request &req, Response &res)
     }
     catch (const HttpException &e)
     {
-        // std::cerr << "HttpException: " << e.what() << std::endl;
-        const std::string filepath = req.get_server_config().getErrorPagePath(e.status_code());
+        send_error(req, res, e.status_code(), e.what());
+    }
+    catch (const std::exception &e)
+    {
+        send_error(req, res, 500, e.what());
+    }
+}
+
+void ErrorHandler::send_error(Request &req, Response &res, int status_code, const char *)
+{
+    // std::cerr << "HttpException: " << what << std::endl;
+    const std::string filepath = req.get_server_config().getErrorPagePath(status_code);
         if (filepath.size() && Util::file_exists(filepath))
         {
-            res.send_error_file(e.status_code(), filepath);
+        res.send_error_file(status_code, filepath);
         }
         else
         {
             std::stringstream ss;
-            generate_html(ss, e.status_code());
-            res.send_content(e.status_code(), ss.str());
-        }
+        generate_html(ss, status_code);
+        res.send_content(status_code, ss.str());
     }
 }
 

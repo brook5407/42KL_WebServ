@@ -1,9 +1,10 @@
 #include "CGI.hpp"
+#include "ErrorHandler.hpp"
 #include <cstdlib>
 #include <csignal>
 
-CGI::CGI(Response &response)
-: _pid(-1), _response(response), _start_time(time(NULL))
+CGI::CGI(const Request &request, const Response &response)
+: _pid(-1), _request(request), _response(response), _start_time(time(NULL))
 {
 	FILE	*file_out = tmpfile();
 	_file_out_fd = fileno(file_out);
@@ -58,14 +59,15 @@ bool	CGI::timeout(std::size_t execution_timeout_sec)
 	bool is_timeout = (timediff >= execution_timeout_sec);
 	if (is_timeout)
 	{
-		_response.send_content(502, "Process has timed out");
+		ErrorHandler::send_error(_request, _response, 502, "Process has timed out");
 		kill(_pid, SIGKILL);
 	}
 	return (is_timeout);
 }
 
-void	CGI::response(void)
+void	CGI::response(int exit_code)
 {
+	(void)exit_code;
 	_response.send_cgi_fd(_file_out_fd, _session_id);
 }
 

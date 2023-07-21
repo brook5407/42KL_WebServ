@@ -22,7 +22,7 @@ void CGIHandler::execute(Request &req, Response &res)
     if (!Util::file_executable(arg0))
         throw HttpException(403, "require executable file");
 
-    CGI cgi(res);
+    CGI cgi(req, res);
 	pid_t pid = fork();
     if (pid == -1)
     {
@@ -85,7 +85,13 @@ void CGIHandler::handle_exit(void)
         {
             if (it->get_pid() == pid)
             {
-                it->response();
+                if (WIFEXITED(status))
+                    status = WEXITSTATUS(status);
+                else if (WIFSIGNALED(status))
+                    status = 128 + WTERMSIG(status);
+                else
+                    status = status;
+                it->response(status);
                 _cgi_processes.erase(it);
                 break;
             }
