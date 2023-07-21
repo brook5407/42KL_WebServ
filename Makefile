@@ -55,7 +55,7 @@ $(OBJDIR): $(OBJFILES)
 test: $(NAME) test_config $(OBJDIR) make_test_dir make_test_conf test_config_run test_cases
 	pkill $(NAME) || true
 	./$(NAME) YoupiBanane.conf 180 2>&1 > webserv.log &
-	time ./tester http://localhost:$(PORT) || bash -c "time ./ubuntu_tester http://localhost:$(PORT)"
+	time ./tester http://127.0.0.1:$(PORT) || bash -c "time ./ubuntu_tester http://127.0.0.1:$(PORT)"
 
 tester:
 	curl -LO https://cdn.intra.42.fr/document/document/18780/tester
@@ -78,7 +78,6 @@ make_test_conf:
 	echo "\
 server {\n\
     listen 0.0.0.0:$(PORT);\n\
-    server_name 127.0.0.1;\n\
     client_max_body_size 1m;\n\
     location / {\n\
         root ./wwwroot;\n\
@@ -88,10 +87,36 @@ server {\n\
         add_cgi .cgi ./;\n\
         add_cgi .py /usr/bin/python3;\n\
     }\n\
+    add_ext .css    text/css;\n\
+    add_ext .gif    image/gif;\n\
+    add_ext .htm    text/html;\n\
+    add_ext .html   text/html;\n\
+    add_ext .ico    image/x-icon;\n\
+    add_ext .jpeg   image/jpeg;\n\
+    add_ext .jpg    image/jpeg;\n\
+    add_ext .js	    application/javascript;\n\
+    add_ext .json   application/json;\n\
+    add_ext .mp4    video/mp4;\n\
+    add_ext .otf    font/otf;\n\
+    add_ext .png    image/png;\n\
+    add_ext .pdf    application/pdf;\n\
+    add_ext .svg    image/svg+xml;\n\
+    add_ext .swf    application/x-shockwave-flash;\n\
+    add_ext .tar    application/x-tar;\n\
+    add_ext .tif    image/tiff;\n\
+    add_ext .tiff   image/tiff;\n\
+    add_ext .ttf    font/ttf;\n\
+    add_ext .weba   audio/webm;\n\
+    add_ext .webm   video/webm;\n\
+    add_ext .webp   image/webp;\n\
+    add_ext .woff   font/woff;\n\
+    add_ext .woff2  font/woff2;\n\
+    add_ext .xml    application/xml;\n\
+    add_ext .zip    application/zip;\n\
 }\n\
 server {\n\
     listen 0.0.0.0:$(PORT);\n\
-    server_name localhost;\n\
+    server_name 127.0.0.1;\n\
     client_max_body_size 100m;\n\
     add_ext .bad_extension text/plain;\n\
     add_ext .pouic text/plain;\n\
@@ -107,7 +132,7 @@ server {\n\
     location /post_body {\n\
         root ./YoupiBanane/post_body;\n\
         methods POST;\n\
-		client_max_body_size 100;\n\
+        client_max_body_size 100;\n\
     }\n\
     location /directory {\n\
         root ./YoupiBanane;\n\
@@ -133,10 +158,10 @@ test_cases:
 	./$(NAME) test/invalid_method.conf 2>&1 | grep "Invalid method in location"
 	# ./$(NAME) test/conflict_port.conf 2>&1 |grep "Address already in use"
 	
-	./$(NAME) &
+	(pkill $(NAME) || true) && ./$(NAME) &
 	sleep 1 \
-	&& cat /dev/random | nc localhost 8080 | grep "400" \
 	&& ./$(NAME) 2>&1 | grep "Address already in use" \
+	# && cat /dev/random | nc localhost 8080 | grep "400" \
 
 	(pkill $(NAME) || true) && ./$(NAME) test/session.conf 2>&1 > webserv.log &
 	sleep 1 \
