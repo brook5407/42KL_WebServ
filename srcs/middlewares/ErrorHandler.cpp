@@ -10,12 +10,21 @@ void ErrorHandler::execute(Request &req, Response &res)
 {
     try
     {
+        if (req.get_method() == "HEAD") // not supported method
+            return res.send_content(405, std::string()); // no-body hack
         if (!req.get_location_config().checkRedirection() && req.get_translated_path().empty())
-            throw HttpException(404, "no location matched");
+        {
+            if (req.get_method() == "GET")
+                throw HttpException(404, "no location matched for unconfigured location");
+            else
+                throw HttpException(405, "method not allowed for unconfigured location");
+
+        }
         Middleware::execute(req, res);
     }
     catch (const HttpException &e)
     {
+        std::cerr << "HttpException: " << e.what() << std::endl;
         send_error(req, res, e.status_code(), e.what());
     }
     catch (const std::exception &e)

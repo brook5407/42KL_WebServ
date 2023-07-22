@@ -47,7 +47,7 @@ void	CGI::exec(const std::string &argv0, const std::string &argv1, const std::st
 	};
 	char **envp = string_to_char(this->_envp);
 	execve(*argv, argv, envp);
-	perror("execve");
+	perror(*argv);
 	delete [] envp;
 	fclose(file_in);
 	exit(1);
@@ -59,7 +59,7 @@ bool	CGI::timeout(std::size_t execution_timeout_sec)
 	bool is_timeout = (timediff >= execution_timeout_sec);
 	if (is_timeout)
 	{
-		ErrorHandler::send_error(_request, _response, 502, "Process has timed out");
+		ErrorHandler::send_error(_request, _response, 408, "Process has timed out");
 		kill(_pid, SIGKILL);
 	}
 	return (is_timeout);

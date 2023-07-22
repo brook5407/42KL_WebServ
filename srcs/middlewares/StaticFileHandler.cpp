@@ -14,9 +14,9 @@ void StaticFileHandler::execute(Request &req, Response &res)
         std::map<std::string, std::string>::iterator it;
         it = mimetype.find(extension);
         if (it == mimetype.end())
-            throw HttpException(403, "Forbidden");
+            throw HttpException(403, "Forbidden file extension");
         res.send_file(200, req.get_translated_path(), it->second);
     }
     else
-        throw HttpException(404, "Not found");
+        throw HttpException(404, "Static Not found " + req.get_translated_path());
 }

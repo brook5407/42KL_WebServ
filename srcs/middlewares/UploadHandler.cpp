@@ -10,6 +10,11 @@ static bool checkMultiPart(const std::string &content_type);
 // todo think about http response status code for different failures
 void UploadHandler::execute(Request &req, Response &res)
 {
+    const char *msg_upload_success =
+        "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Upload Success</title></head><body>"
+        "<h1>Upload Successful</h1><p>Your file has been successfully uploaded.</p>"
+        "<p><a href=\"javascript:history.back()\">Go back</a></p></body></html>";
+
     if (req.get_method() == "POST" && checkMultiPart(req.get_header("Content-Type")) )
     {
         //get boundary information for headers
@@ -44,14 +49,8 @@ void UploadHandler::execute(Request &req, Response &res)
                 throw HttpException(400, "Bad Request: filename not found");
             // save file
             filename = Util::combine_path(req.get_translated_path(), filename);
-            std::cout << "filename: " << filename << " sz:" << body.size() << std::endl;
-            std::ofstream ofs(filename.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
-            if (!ofs.is_open())
-                throw HttpException(500, "Internal Server Error: failed to open file");
-            ofs << body;
-            res.send_content(200, "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Upload Success</title></head><body> \
-            <h1>Upload Successful</h1><p>Your file has been successfully uploaded.</p> \
-            <p><a href=\"javascript:history.back()\">Go back</a></p></body></html>");
+            save_file(filename, body);
+            res.send_content(201, msg_upload_success);
         }
         else
             throw HttpException(400, "Bad Request: boundary not found");
@@ -66,7 +65,7 @@ void UploadHandler::execute(Request &req, Response &res)
         else
             filename = req.get_translated_path();
         save_file(filename, req.get_body());
-        res.send_content(200, filename.substr(filename.find_last_of('/') + 1) + " has been uploaded!");
+        res.send_content(201, msg_upload_success);
     }
     else if (req.get_method() == "DELETE")
     {
@@ -96,11 +95,15 @@ std::string get_filename(const std::string &Content_disposition)
 
 void save_file(const std::string &filename, const std::string &content)
 {
+    // std::cout << "filename: " << filename << " sz:" << content.size() << std::endl;
     if (filename.empty())
             throw HttpException(400, "Bad Request: no filename");
+    if (Util::dir_exists(filename))
+        throw HttpException(400, "Bad Request: Cannot upload as folder");
     std::ofstream ofs(filename.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
+    // if (!ofs.is_open())
     if (ofs.fail())
-        throw HttpException(500, "Internal Server Error: fail to open file");
+        throw HttpException(500, "Internal Server Error: fail to open file " + filename);
     ofs << content;
 }
 
