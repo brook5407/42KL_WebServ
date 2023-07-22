@@ -1,4 +1,5 @@
 #include "Request.hpp"
+#include "Util.hpp"
 #include <iostream>
 #include <cstdlib>
 #include <algorithm>
@@ -217,12 +218,7 @@ void Request::find_location_config(void)
                     this->_script_name.erase(0, route.size()); // + 1);
                     // this->_script_name = this->_script_name.substr(route.size() - pos);
                 }
-                this->_script_name = this->get_location_config().getRoot() + this->_script_name;
-                while (this->_script_name.find("/..") != std::string::npos)
-                    this->_script_name.replace(this->_script_name.find("/.."), 2, "/");
-                while (this->_script_name.find("//") != std::string::npos)
-                    this->_script_name.replace(this->_script_name.find("//"), 2, "/");
-
+                this->_script_name = Util::combine_path(Util::absolute_path(this->get_location_config().getRoot()), this->_script_name);
                 _script_name = url_decode(_script_name);
 
                 // std::cout << this->_uri << " => " << this->_script_name

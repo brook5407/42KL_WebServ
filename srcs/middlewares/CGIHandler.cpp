@@ -4,6 +4,8 @@
 #include "HttpException.hpp"
 #include "Util.hpp"
 #include <sys/wait.h>
+#include <unistd.h>
+#include <cstdio>
 
 extern char **environ;
 
@@ -17,8 +19,12 @@ void CGIHandler::execute(Request &req, Response &res)
         return Middleware::execute(req, res);
     if (arg0 == "./")
         arg0 = req.get_translated_path();
-    if (!Util::file_exists(arg0) || !Util::file_exists(req.get_translated_path()))
-        throw HttpException(404, "Not found");
+    else
+        arg0 = Util::absolute_path(arg0);
+    if (!Util::file_exists(arg0))
+        throw HttpException(404, "Cgi not found " + arg0);
+    if (!Util::file_exists(req.get_translated_path()))
+        throw HttpException(404, "Cgi not found " + req.get_translated_path());
     if (!Util::file_executable(arg0))
         throw HttpException(403, "require executable file");
 
@@ -37,6 +43,7 @@ void CGIHandler::execute(Request &req, Response &res)
     }
     else
     {
+        chdir(Util::dirname(req.get_translated_path()).c_str());
         // duplicate environment is replaced by newer value
         for (Request::t_headers::const_iterator it = req.get_headers().begin(); it != req.get_headers().end(); ++it)
             cgi.add_envp("HTTP_" + it->first, it->second);

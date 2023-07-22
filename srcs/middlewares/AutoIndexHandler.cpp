@@ -1,5 +1,6 @@
 #include "AutoIndexHandler.hpp"
 #include "HttpException.hpp"
+#include "Util.hpp"
 #include <dirent.h>
 #include <sys/stat.h>
 #include <ctime>
@@ -11,16 +12,15 @@ static void show_toggle(std::stringstream &ss);
 
 void AutoIndexHandler::execute(Request &req, Response &res)
 {
-    DIR *dir = opendir(req.get_translated_path().c_str());
-    if (dir == NULL)
+    if (!Util::dir_exists(req.get_translated_path()))
         return Middleware::execute(req, res);
     if (req.get_location_config().checkAutoIndex() == false)
     {
-        closedir(dir);
         // if (req.get_method() == "GET")
         //     throw HttpException(403, "listing denied");
         return Middleware::execute(req, res);
     }
+    DIR *dir = opendir(req.get_translated_path().c_str());
     std::stringstream ss;
     generate_html(ss, dir, req.get_uri(), req.get_translated_path());
     closedir(dir);
