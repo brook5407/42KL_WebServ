@@ -183,7 +183,8 @@ test_cases:
 	&& curl -s -o - localhost:8080 | grep 404 \
 	&& curl -s -o - localhost:8080/ | grep 404 \
 	&& curl -s -o - localhost:8080/whatever | grep 404 \
-	&& curl -s -o - localhost:8080/dir/ | grep "Index of" \
+	&& curl -s -o - localhost:8080/dir/ | grep "host1.htm" \
+	&& curl -s -o - localhost:8080/dir3/ | grep "host three" \
 	&& curl -v -s -o - localhost:8080/dir/ 2>&1  | grep "HTTP/1.1 200 OK" \
 	# && curl -v -s -o - localhost:8080/dir 2>&1 | grep "301" \
 	# && curl -v -s -o - localhost:8080/dir2/ 2>&1 | grep "403" \
@@ -214,29 +215,39 @@ test_cases:
 	&& mkdir -p wwwroot/upload \
 	&& rm -f wwwroot/upload/purple.png \
 	&& test ! -f wwwroot/upload/purple.png \
+	&& curl http://localhost:8080/upload/purple.png | grep 404 \
 	&& curl -F 'upload=@wwwroot/purple.png' http://localhost:8080/upload 2>&1 | grep "Upload Successful" \
+	&& rm -f purple.png && test ! -f purple.png \
+	&& curl -LO http://localhost:8080/upload/purple.png \
+	&& test -f purple.png && diff purple.png wwwroot/purple.png && rm purple.png \
 	&& test -f wwwroot/upload/purple.png \
 	&& diff wwwroot/purple.png wwwroot/upload/purple.png \
 	&& curl -X DELETE http://localhost:8080/upload/purple.png 2>&1 | grep "has been deleted" \
 	&& test ! -f wwwroot/upload/purple.png \
+	&& curl -X DELETE http://localhost:8080/upload/purple.png 2>&1 | grep "400 Bad Request" \
+	&& curl -X DELETE http://localhost:8080/upload 2>&1 | grep "400 Bad Request" \
 	&& curl -v -F 'upload=@wwwroot/purple.png' http://localhost:8080/small 2>&1 | grep "HTTP/1.1 413 Payload Too Large" \
 	&& rm -f wwwroot/upload/chunked.png \
-	&& curl -H "Transfer-Encoding: chunked" --data-binary @wwwroot/purple.png localhost:8080/upload/chunked.png -v 2>&1 | grep "has been uploaded" \
+	&& curl -H "Transfer-Encoding: chunked" --data-binary @wwwroot/purple.png localhost:8080/upload/chunked.png -v 2>&1 | grep "Upload Successful" \
 	&& diff wwwroot/upload/chunked.png wwwroot/purple.png \
-	&& curl -H "Transfer-Encoding: chunked" --data-binary @Makefile localhost:8080/upload/chunked.png -v 2>&1 | grep "has been uploaded" \
+	&& curl -H "Transfer-Encoding: chunked" --data-binary @Makefile localhost:8080/upload/chunked.png -v 2>&1 | grep "Upload Successful" \
 	&& diff wwwroot/upload/chunked.png Makefile \
 	&& curl -X DELETE http://localhost:8080/upload/chunked.png 2>&1 | grep "has been deleted" \
 	&& test ! -f wwwroot/upload/chunked.png \
+	&& curl -X POST -H "Content-Type: plain/text" --data "1234567890" http://localhost:8080/small/1234567890 2>&1 | grep "Upload Successful" \
+	&& curl -X POST -H "Content-Type: plain/text" --data "1234567890" http://localhost:8080/small 2>&1 | grep "400 Bad Request" \
+	&& curl -X POST -H "Content-Type: plain/text" --data "12345678901" http://localhost:8080/small/1234567890 2>&1 | grep "413 Payload Too Large" \
+
 
 	(pkill $(NAME) || true) && ./$(NAME) test/CGI.conf  2>&1 > webserv.log &
 	sleep 1 \
-	&& curl -v localhost:8080/cookie/cookie.py 2>&1 | grep "403 Forbidden" \
-	&& curl -v localhost:8080/cookie/file_does_not_exist.sh 2>&1 | grep "404 Not Found" \
-	&& curl -v localhost:8080/cookie/non_executable.sh 2>&1 | grep "hello" \
-	&& curl -v localhost:8080/cookie/timeout.sh 2>&1 | grep "502" \
-	&& curl -v localhost:8080/cookie/test_envp.sh 2>&1 | grep "PWD" \
-	&& curl -v localhost:8080/cookie/cookie.sh?query=string 2>&1 | grep "QUERY_STRING=query=string" \
-	&& curl -v -X POST -d "check=input" localhost:8080/cookie/test_input.sh 2>&1 | grep "Input: check=input" \
+	&& curl -v localhost:8080/cgi/cookie.py 2>&1 | grep "403 Forbidden" \
+	&& curl -v localhost:8080/cgi/file_does_not_exist.sh 2>&1 | grep "404 Not Found" \
+	&& curl -v localhost:8080/cgi/non_executable.sh 2>&1 | grep "hello" \
+	&& curl -v localhost:8080/cgi/timeout.sh 2>&1 | grep "408" \
+	&& curl -v localhost:8080/cgi/test_envp.sh 2>&1 | grep "PWD" \
+	&& curl -v localhost:8080/cgi/cookie.sh?query=string 2>&1 | grep "QUERY_STRING=query=string" \
+	&& curl -v -X POST -d "check=input" localhost:8080/cgi/test_input.sh 2>&1 | grep "Input: check=input" \
 
 	(pkill $(NAME) || true) && ./$(NAME) test/redirect.conf 2>&1 > webserv.log &
 	sleep 1 \
