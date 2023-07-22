@@ -6,6 +6,9 @@
 #include <cstdlib>
 #include <algorithm>
 
+// #define BUFFER_SIZE 4 * 1024 * 1024
+#define BUFFER_SIZE 8 * 1024
+
 static char _buffer[BUFFER_SIZE];
 
 static unsigned long get_nanosecond(void)

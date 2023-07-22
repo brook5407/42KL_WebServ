@@ -29,6 +29,7 @@ class RequestBody
         size_t          _consume_crlf;
         size_t          _total_crlf;
         size_t          _temp_chunk_size;
+        std::string     _save_buffer;
 };
 
 #endif

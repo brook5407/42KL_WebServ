@@ -28,6 +28,7 @@ void RequestBody::reset(void)
     _saved_length = 0;
     _need_end_chunk = false;
     _total_crlf = false;
+    _save_buffer.clear();
     if (_file.is_open())
         _file.close();
     _file.open(_filename.c_str(), std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
@@ -60,7 +61,12 @@ bool RequestBody::add_chunk(const char *buffer, std::size_t size)
         {
             size_t write_size
                 = std::min(_expected_length - _saved_length, static_cast<size_t>(end - buffer));
-            _file.write(buffer, write_size);
+            _save_buffer.append(buffer, write_size);
+            if (!_need_end_chunk || _save_buffer.size() >= 256 * 1024)
+            {
+                _file.write(_save_buffer.c_str(), _save_buffer.size());
+                _save_buffer.clear();
+            } 
             // check error
             buffer += write_size;
             _saved_length += write_size;
@@ -80,6 +86,11 @@ bool RequestBody::add_chunk(const char *buffer, std::size_t size)
             {
                 ++_total_crlf;
                 _expected_length += _temp_chunk_size;
+                if (_expected_length && _temp_chunk_size == 0)
+                {
+                    _file.write(_save_buffer.c_str(), _save_buffer.size());
+                    _save_buffer.clear();
+                }
                 if (_need_end_chunk && _temp_chunk_size == 0)
                 {
                     _need_end_chunk = false;
