@@ -4,11 +4,8 @@
 
 void IndexHandler::execute(Request &req, Response &res)
 {
-    DIR *dir = opendir(req.get_translated_path().c_str());
-    if (dir)
+    if (Util::dir_exists(req.get_translated_path()))
     {
-        closedir(dir);
-
         for (std::size_t i = 0; i < req.get_location_config().getIndex().size(); ++i)
         {
             const std::string &filename = req.get_location_config().getIndex()[i];
