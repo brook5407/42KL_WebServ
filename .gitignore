@@ -1,0 +1,15 @@
+bak/
+wwwroot/production
+wwwroot/vendors
+wwwroot/build
+YoupiBanane/
+*.d
+*.o
+*.exe
+*.log
+*.raw
+webserv
+test_config
+*tester
+YoupiBanane.conf
+cookie
