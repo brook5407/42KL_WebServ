@@ -1,5 +1,7 @@
 bak/
-wwwroot/
+wwwroot/production
+wwwroot/vendors
+wwwroot/build
 YoupiBanane/
 *.d
 *.o
