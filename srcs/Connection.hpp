@@ -1,6 +1,7 @@
 #ifndef CONNECTION_HPP
 #define CONNECTION_HPP
 
+#include "RequestBody.hpp"
 #include <sys/socket.h>
 #include <unistd.h>
 #include <fstream>
@@ -32,6 +33,8 @@ class Connection
         int             _client_port;
         std::string     _client_ip;
         int             _in_fd;
+
+        RequestBody     request_body;
 
     private:
         Connection(void);

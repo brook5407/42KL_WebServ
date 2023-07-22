@@ -4,12 +4,13 @@
 #include <algorithm>
 #include <fstream>
 
-const std::string   &Request::get_body(void) const { return _body; }
+// const std::string   &Request::get_body(void) const { return _body; }
+const std::fstream   &Request::get_body_stream(void) { return request_body.get_stream(); }
 const std::string   &Request::get_method(void) const { return _method; }
 const std::string   &Request::get_uri(void) const { return _uri; }
 const std::string   &Request::get_query_string(void) const { return _search; }
 const std::string   &Request::get_translated_path(void) const { return _script_name; }
-std::size_t         Request::get_body_length(void) const { return _body_length; }
+std::size_t         Request::get_body_length(void) const { return request_body.size(); }
 const Server        &Request::get_server_config(void) const { return *_server_config; };
 const Location      &Request::get_location_config(void) const { return *_location_config; };
 bool                Request::is_ready(void) const { return _is_ready; }
@@ -19,8 +20,8 @@ void                Request::set_translated_path(const std::string &value) { _sc
 static std::string url_decode(const std::string &value);
 
 // todo: support both \n and \r\n?
-Request::Request(const std::vector<Server> &configs, std::string &buffer)
-: _buffer(buffer),  _body_length(0), _is_ready(false)
+Request::Request(RequestBody &rb, const std::vector<Server> &configs, std::string &buffer)
+: request_body(rb), _is_ready(false)
 {
     static Location default_location;
     this->_server_config = &configs.at(0); //first server config as default
@@ -53,27 +54,27 @@ void Request::parse_request(const std::string &buffer)
 
     parse_headers(buffer, pos_header_end);
 
-    if (_headers.count("Content-Length"))
-    {
-        // todo error handler
-        _body_length = std::atoi(_headers["Content-Length"].c_str());
-        if (_body_length > buffer.size() - pos_header_end - 4)
-            return; // stop incomplete body for more recv()
-        _body = buffer.substr(pos_header_end + 4, _body_length);
-    }
-    else if (_headers.count("Transfer-Encoding"))
-    {
-        if (_headers["Transfer-Encoding"] != "chunked")
-        {
-            std::cout << "invalid Transfer-Encoding " << _headers["Transfer-Encoding"] << std::endl;
-            return;
-        }
-        if (buffer.find("\r\n0\r\n\r\n", buffer.size() - 7) == std::string::npos)
-        {
-            return;
-        }
-        parse_chunked_body(buffer, pos_header_end);
-    }
+    // if (_headers.count("Content-Length"))
+    // {
+    //     // todo error handler
+    //     _body_length = std::atoi(_headers["Content-Length"].c_str());
+    //     if (_body_length > buffer.size() - pos_header_end - 4)
+    //         return; // stop incomplete body for more recv()
+    //     _body = buffer.substr(pos_header_end + 4, _body_length);
+    // }
+    // else if (_headers.count("Transfer-Encoding"))
+    // {
+    //     if (_headers["Transfer-Encoding"] != "chunked")
+    //     {
+    //         std::cout << "invalid Transfer-Encoding " << _headers["Transfer-Encoding"] << std::endl;
+    //         return;
+    //     }
+    //     if (buffer.find("\r\n0\r\n\r\n", buffer.size() - 7) == std::string::npos)
+    //     {
+    //         return;
+    //     }
+    //     parse_chunked_body(buffer, pos_header_end);
+    // }
     _is_ready = true;
 }
 
@@ -130,44 +131,44 @@ void Request::parse_headers(const std::string &buffer, const std::size_t pos_hea
     }
 }
 
-void Request::parse_chunked_body(const std::string &buffer, const std::size_t pos_header_end)
-{
-    const std::string hex = "0123456789ABCDEF";
-    int chunk_length = 0;
+// void Request::parse_chunked_body(const std::string &buffer, const std::size_t pos_header_end)
+// {
+//     const std::string hex = "0123456789ABCDEF";
+//     int chunk_length = 0;
 
-    for (std::size_t pos = pos_header_end + 4, val; pos < buffer.size();)
-    {
-        val = hex.find(std::toupper(buffer[pos]));
-        if (val != std::string::npos)
-        {
-            chunk_length = chunk_length * 16 + val;
-            ++pos;
-            continue;
-        }
+//     for (std::size_t pos = pos_header_end + 4, val; pos < buffer.size();)
+//     {
+//         val = hex.find(std::toupper(buffer[pos]));
+//         if (val != std::string::npos)
+//         {
+//             chunk_length = chunk_length * 16 + val;
+//             ++pos;
+//             continue;
+//         }
 
-        if (buffer.find("\r\n", pos) != pos)
-        {
-            std::cout << "invalid chunk size" << std::endl;
-            return;
-        }
-        pos += 2;
-        if (chunk_length)
-            _body += buffer.substr(pos, chunk_length);
-        pos += chunk_length;
-        if (buffer.find("\r\n", pos) != pos)
-        {
-            std::cout << "invalid chunk data" << std::endl;
-            return;
-        }
-        pos += 2;
-        if (chunk_length == 0)
-            break;
-        chunk_length = 0;
-    }
-    _body_length = _body.size();
-    // std::ofstream ofs("chunked.txt", std::ios::out | std::ios::trunc | std::ios::binary);
-    // ofs << body;
-}
+//         if (buffer.find("\r\n", pos) != pos)
+//         {
+//             std::cout << "invalid chunk size" << std::endl;
+//             return;
+//         }
+//         pos += 2;
+//         if (chunk_length)
+//             _body += buffer.substr(pos, chunk_length);
+//         pos += chunk_length;
+//         if (buffer.find("\r\n", pos) != pos)
+//         {
+//             std::cout << "invalid chunk data" << std::endl;
+//             return;
+//         }
+//         pos += 2;
+//         if (chunk_length == 0)
+//             break;
+//         chunk_length = 0;
+//     }
+//     _body_length = _body.size();
+//     // std::ofstream ofs("chunked.txt", std::ios::out | std::ios::trunc | std::ios::binary);
+//     // ofs << body;
+// }
 
 
 void Request::find_server_config(const std::vector<Server> &server_configs)

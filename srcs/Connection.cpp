@@ -3,6 +3,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sstream>
+#include <cstdlib>
+#include <algorithm>
 
 static char _buffer[BUFFER_SIZE];
 
@@ -71,7 +73,34 @@ void Connection::recv_request(void)
     }
     if (_request_buffer.empty())
         _start_time = get_nanosecond();
-    _request_buffer.append(_buffer, _buffer + length);
+    if (_request_buffer.find("\r\n\r\n") == std::string::npos)
+    {
+        char *buffer_end = _buffer + length;
+        char *blank_line = std::search(_buffer, buffer_end, "\r\n\r\n", "\r\n\r\n" + 4);
+        _request_buffer.append(_buffer, std::min(blank_line + 4, buffer_end));
+
+std::cout << _request_buffer.size() << std::endl;
+        // std::cout << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        // << std::endl << _request_buffer << std::endl
+        // << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" << std::endl;
+        if (blank_line < buffer_end)
+        {
+            if (_request_buffer.find(": chunked\r\n") != std::string::npos)
+                request_body.init_chunk();
+            else
+            {
+                size_t content_length = 0;
+                const char cl[] = "Content-Length:";
+                size_t pos_cl = _request_buffer.find(cl);
+                if (pos_cl != std::string::npos)
+                    content_length = std::atoi(_request_buffer.c_str() + pos_cl + sizeof(cl));
+                request_body.init_nonchunk(content_length);
+            }
+            request_body.add_chunk(blank_line + 4, buffer_end - blank_line - 4);
+        }
+    }
+    else
+        request_body.add_chunk(_buffer, length);
 }
 
 void Connection::set_response(const std::stringstream &data)

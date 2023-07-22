@@ -35,15 +35,25 @@ Webserver::Webserver(const std::string &config_filepath, int cgi_timeout):
 
 void Webserver::process_request(Connection &connection)
 {
-    Request request(_config.getServers(), connection._request_buffer); // parsing of http request starts here
-    if (request.is_ready())
+    Request request(connection.request_body, _config.getServers(), connection._request_buffer); // parsing of http request starts here
+    // std::cout 
+    //     << connection.request_body.failed()
+    //     << connection.request_body.completed()
+    //     << request.is_ready() << connection._request_buffer << std::endl;
+    if (request.is_ready() && !connection.request_body.failed() && connection.request_body.completed())
     {
         Response response(connection);
         _pipeline.execute(request, response);
     }
-    else if (connection._request_buffer.find("\r\n\r\n") > 80 * 1024
-        && connection._request_buffer.size() > 80 * 1024)
+    else if (
+        connection.request_body.failed()
+        || (connection._request_buffer.find("\r\n\r\n") > 80 * 1024
+            && connection._request_buffer.size() > 80 * 1024)
+        )
     {
+        std::cout << "" << connection.request_body.failed() 
+        << connection.request_body.completed()
+        << connection.request_body.size() << std::endl;
         Response response(connection);
         response.set_keep_alive(false);
         ErrorHandler::send_error(request, response, 400, "header too large");

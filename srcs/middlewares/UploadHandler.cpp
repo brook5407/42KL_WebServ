@@ -18,7 +18,10 @@ void UploadHandler::execute(Request &req, Response &res)
         if (pos != std::string::npos)
         {
             std::string boundary = content_type.substr(pos + 9);
-            std::string body = req.get_body();
+            std::stringstream buffer;
+            buffer << req.get_body_stream().rdbuf();
+            std::string body = buffer.str();
+            // std::string body = req.get_body();
             // remove last line boundary
             std::string::size_type pos_bd_end = body.find_last_of(boundary);
             body = body.substr(0, pos_bd_end - 4);
@@ -65,7 +68,10 @@ void UploadHandler::execute(Request &req, Response &res)
             filename = Util::combine_path(req.get_translated_path(), filename); // prefix document root
         else
             filename = req.get_translated_path();
-        save_file(filename, req.get_body());
+        std::stringstream buffer;
+        buffer << req.get_body_stream().rdbuf();
+        std::string body = buffer.str();
+        save_file(filename, body); //req.get_body()
         res.send_content(200, filename.substr(filename.find_last_of('/') + 1) + " has been uploaded!");
     }
     else if (req.get_method() == "DELETE")
