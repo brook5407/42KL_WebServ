@@ -26,7 +26,7 @@ void CGIHandler::execute(Request &req, Response &res)
     if (!Util::file_exists(req.get_translated_path()))
         throw HttpException(404, "Cgi not found " + req.get_translated_path());
     if (!Util::file_executable(arg0))
-        throw HttpException(403, "require executable file");
+        throw HttpException(403, "require executable file " + arg0);
 
     CGI cgi(req, res);
 	pid_t pid = fork();
