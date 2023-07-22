@@ -23,7 +23,7 @@ cat <<END
     <input type="submit" value="POST">
 </form>
 $POSTDATA
-<h3>ENV</h3>
+<h3>ENVP</h3>
 <pre>
 $(env)
 </pre>
