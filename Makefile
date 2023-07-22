@@ -30,7 +30,7 @@ ifeq ($(shell which g++), )
 	CXXFLAGS	+= -fPIE
 endif
 
-.PHONY: all clean fclean re test make_test_dir make_test_conf test_config_run
+.PHONY: all clean fclean re test make_test_dir make_test_conf test_config_run test_resp
 
 all: $(NAME) $(OBJDIR)
 
@@ -142,6 +142,9 @@ server {\n\
     }\n\
 }" > YoupiBanane.conf
 
+test_resp:
+	while true; do time curl -s localhost:8080 >/dev/null; sleep 1; done
+
 test_config: test_config.o Server.o Location.o ConfigParser.o ParserError.o MimeType.o
 
 test_config_run: test_config
@@ -159,8 +162,8 @@ test_cases:
 	# ./$(NAME) test/conflict_port.conf 2>&1 |grep "Address already in use"
 	
 	(pkill $(NAME) || true) && ./$(NAME) &
-	sleep 1 \
-	&& ./$(NAME) 2>&1 | grep "Address already in use" \
+	sleep 2 \
+	&& ./$(NAME) conf/webserv.conf 2>&1 | grep "Address already in use" \
 	# && cat /dev/random | nc localhost 8080 | grep "400" \
 
 	(pkill $(NAME) || true) && ./$(NAME) test/session.conf 2>&1 > webserv.log &
