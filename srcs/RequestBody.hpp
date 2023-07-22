@@ -16,6 +16,8 @@ class RequestBody
         bool            completed() const;
         std::fstream    &get_stream();
         std::size_t     size();
+        const std::string &get_filename(void) const
+        {return _filename;};
 
     private:
         std::string     _filename;

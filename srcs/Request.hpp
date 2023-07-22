@@ -13,7 +13,7 @@ class Request
 public:
     typedef std::map<std::string, std::string> t_headers;
 
-    Request(RequestBody &request_body, const std::vector<Server> &servers, std::string &buffer);
+    Request(RequestBody &request_body, const std::vector<Server> &servers, const std::string &buffer);
 
     const std::string   &get_header(const std::string &key) const;
     const t_headers     &get_headers(void) const;

@@ -55,10 +55,10 @@ void CGIHandler::execute(Request &req, Response &res)
         // cgi.add_envp("SCRIPT_NAME", req.get_translated_path());
         cgi.add_envp("SERVER_SOFTWARE", "webserv");
         cgi.add_envp("SERVER_PORT", Util::to_string(res._connection._server_port));
-        std::stringstream buffer;
-        buffer << req.get_body_stream().rdbuf();
-        std::string body = buffer.str();
-        cgi.exec(arg0, req.get_translated_path(), body); //req.get_body()
+        // std::stringstream buffer;
+        // buffer << req.get_body_stream().rdbuf();
+        // std::string body = buffer.str();
+        cgi.exec(arg0, req.get_translated_path(), req.request_body.get_filename()); //req.get_body()
     }
 }
 

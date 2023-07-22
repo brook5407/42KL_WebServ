@@ -19,8 +19,7 @@ void                Request::set_translated_path(const std::string &value) { _sc
 
 static std::string url_decode(const std::string &value);
 
-// todo: support both \n and \r\n?
-Request::Request(RequestBody &rb, const std::vector<Server> &configs, std::string &buffer)
+Request::Request(RequestBody &rb, const std::vector<Server> &configs, const std::string &buffer)
 : request_body(rb), _is_ready(false)
 {
     static Location default_location;

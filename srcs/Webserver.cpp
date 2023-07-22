@@ -40,7 +40,9 @@ void Webserver::process_request(Connection &connection)
     //     << connection.request_body.failed()
     //     << connection.request_body.completed()
     //     << request.is_ready() << connection._request_buffer << std::endl;
-    if (request.is_ready() && !connection.request_body.failed() && connection.request_body.completed())
+    if (request.is_ready()
+        && !connection.request_body.failed() 
+        && connection.request_body.completed())
     {
         Response response(connection);
         _pipeline.execute(request, response);

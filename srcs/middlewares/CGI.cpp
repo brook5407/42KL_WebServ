@@ -2,6 +2,8 @@
 #include "ErrorHandler.hpp"
 #include <cstdlib>
 #include <csignal>
+#include <unistd.h>
+#include <fcntl.h>
 
 CGI::CGI(const Request &request, const Response &response)
 : _pid(-1), _request(request), _response(response), _start_time(time(NULL))
@@ -25,13 +27,14 @@ pid_t	CGI::get_pid(void) const
 	return (_pid);
 }
 
-void	CGI::exec(const std::string &argv0, const std::string &argv1, const std::string &body)
+void	CGI::exec(const std::string &argv0, const std::string &argv1, const std::string &filename)
 {
-	FILE *file_in = tmpfile();
-	int file_in_fd = fileno(file_in);
-	if (write(file_in_fd, body.c_str(), body.size()) != static_cast<ssize_t>(body.size()))
-		exit(1);
-	lseek(file_in_fd, 0, SEEK_SET);
+	// FILE *file_in = tmpfile();
+	// int file_in_fd = fileno(file_in);
+	// if (write(file_in_fd, body.c_str(), body.size()) != static_cast<ssize_t>(body.size()))
+	// 	exit(1);
+	// lseek(file_in_fd, 0, SEEK_SET);
+	int file_in_fd = open(filename.c_str(),  O_RDONLY);
 	if (dup2(_file_out_fd, STDOUT_FILENO) == -1)
 		exit(1);
 	if (dup2(file_in_fd, STDIN_FILENO) == -1)
@@ -49,7 +52,7 @@ void	CGI::exec(const std::string &argv0, const std::string &argv1, const std::st
 	execve(*argv, argv, envp);
 	perror("execve");
 	delete [] envp;
-	fclose(file_in);
+	// fclose(file_in);
 	exit(1);
 }
 

@@ -82,7 +82,7 @@ bool RequestBody::add_chunk(const char *buffer, std::size_t size)
                 _expected_length += _temp_chunk_size;
                 if (_need_end_chunk && _temp_chunk_size == 0)
                 {
-                    _need_end_chunk = 0;
+                    _need_end_chunk = false;
                     _consume_crlf = 3;
                 }
                 else
@@ -93,9 +93,7 @@ bool RequestBody::add_chunk(const char *buffer, std::size_t size)
             else
             {
                 ++_error;
-                std::cerr << "unknown char " << ch << (int)ch 
-                    << " size " << size
-                    << std::endl;
+                // std::cerr << "unknown char " << ch << (int)ch << std::endl;
                 // throw std::runtime_error("invalid chunk size");
                 break;
             }
