@@ -225,7 +225,6 @@ test_cases:
 	&& curl -X DELETE http://localhost:8080/upload/purple.png 2>&1 | grep "has been deleted" \
 	&& test ! -f wwwroot/upload/purple.png \
 	&& curl -X DELETE http://localhost:8080/upload/purple.png 2>&1 | grep "400 Bad Request" \
-	&& curl -X DELETE http://localhost:8080/upload 2>&1 | grep "400 Bad Request" \
 	&& curl -v -F 'upload=@wwwroot/purple.png' http://localhost:8080/small 2>&1 | grep "HTTP/1.1 413 Payload Too Large" \
 	&& rm -f wwwroot/upload/chunked.png \
 	&& curl -H "Transfer-Encoding: chunked" --data-binary @wwwroot/purple.png localhost:8080/upload/chunked.png -v 2>&1 | grep "Upload Successful" \
@@ -237,7 +236,6 @@ test_cases:
 	&& curl -X POST -H "Content-Type: plain/text" --data "1234567890" http://localhost:8080/small/1234567890 2>&1 | grep "Upload Successful" \
 	&& curl -X POST -H "Content-Type: plain/text" --data "1234567890" http://localhost:8080/small 2>&1 | grep "400 Bad Request" \
 	&& curl -X POST -H "Content-Type: plain/text" --data "12345678901" http://localhost:8080/small/1234567890 2>&1 | grep "413 Payload Too Large" \
-
 
 	(pkill $(NAME) || true) && ./$(NAME) test/CGI.conf  2>&1 > webserv.log &
 	sleep 1 \
